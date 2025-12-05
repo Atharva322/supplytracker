@@ -1,0 +1,7 @@
+com\agri\supplytracker\SupplytrackerApplication.class
+com\agri\supplytracker\controller\ProductController.class
+com\agri\supplytracker\exception\ResourceNotFoundException.class
+com\agri\supplytracker\exception\GlobalExceptionHandler.class
+com\agri\supplytracker\model\Product$ProductBuilder.class
+com\agri\supplytracker\repository\ProductRepository.class
+com\agri\supplytracker\model\Product.class

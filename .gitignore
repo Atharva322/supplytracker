@@ -1,0 +1,17 @@
+# ---- Java / Maven / Spring Boot ----
+backend/target/
+backend/.idea/
+backend/.classpath
+backend/.project
+backend/.settings/
+*.iml
+
+# ---- Node / React / Vite ----
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+
+# ---- OS / Editor files ----
+.DS_Store
+Thumbs.db
+.vscode/
