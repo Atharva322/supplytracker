@@ -1,0 +1,11 @@
+name,type,batchId,harvestDate,originFarmId
+Tomatoes,Vegetable,TOM001,2024-01-15,FARM001
+Potatoes,Vegetable,POT001,2024-01-16,FARM001
+Carrots,Vegetable,CAR001,2024-01-17,FARM002
+Apples,Fruit,APP001,2024-01-18,FARM003
+Oranges,Fruit,ORA001,2024-01-19,FARM003
+Bananas,Fruit,BAN001,2024-01-20,FARM004
+Wheat,Grain,WHT001,2024-01-21,FARM005
+Rice,Grain,RIC001,2024-01-22,FARM005
+Corn,Grain,COR001,2024-01-23,FARM006
+Lettuce,Vegetable,LET001,2024-01-24,FARM002

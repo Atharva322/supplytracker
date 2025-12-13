@@ -3,13 +3,20 @@ package com.agri.supplytracker.controller;
 import com.agri.supplytracker.exception.ProductNotFoundException;
 import com.agri.supplytracker.model.Product;
 import com.agri.supplytracker.repository.ProductRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173") // reac de runs on diff origin than 8080
@@ -24,10 +31,28 @@ public class ProductController {
         this.repository = repository;
     }
 
-    // GET all products
+    // GET all products with pagination
     @GetMapping
-    public List<Product> getAllProducts() {
-        return repository.findAll();
+    public ResponseEntity<Map<String, Object>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Product> productPage = repository.findAll(pageable);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", productPage.getContent());
+        response.put("currentPage", productPage.getNumber());
+        response.put("totalItems", productPage.getTotalElements());
+        response.put("totalPages", productPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
     }
 
     // GET by id
@@ -77,17 +102,26 @@ public List<Product> searchProducts(
 }
 
 
-    // POST create
+    // POST create with validation (Admin only)
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Product createProduct(@RequestBody Product product) {
-        return repository.save(product);
+    public ResponseEntity<?> createProduct(@Valid @RequestBody Product product) {
+        try {
+            Product savedProduct = repository.save(product);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to create product");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
 
-    // PUT full update
+    // PUT full update with validation (Admin only)
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable String id,
-                                 @RequestBody Product updatedProduct) {
+    public ResponseEntity<?> updateProduct(@PathVariable String id,
+                                 @Valid @RequestBody Product updatedProduct) {
 
         return repository.findById(id)
                 .map(existing -> {
@@ -96,12 +130,14 @@ public List<Product> searchProducts(
                     existing.setBatchId(updatedProduct.getBatchId());
                     existing.setHarvestDate(updatedProduct.getHarvestDate());
                     existing.setOriginFarmId(updatedProduct.getOriginFarmId());
-                    return repository.save(existing);
+                    Product saved = repository.save(existing);
+                    return ResponseEntity.ok(saved);
                 })
-                .orElseThrow(() -> new ProductNotFoundException(id));
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // PATCH partial update
+    // PATCH partial update (Admin only)
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public Product patchProduct(@PathVariable String id,
                                 @RequestBody Map<String, Object> updates) {
@@ -128,26 +164,18 @@ public List<Product> searchProducts(
         return repository.save(product);
     }
 
-    // DELETE product
+    // DELETE product (Admin only)
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteProduct(@PathVariable String id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
+        // If product doesn't exist → 404
         if (!repository.existsById(id)) {
-            throw new ProductNotFoundException(id);
+            return ResponseEntity.notFound().build();
         }
+
+        // Delete and return 204 No Content
         repository.deleteById(id);
-    }
-
-    @DeleteMapping("/{id}")
-public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
-    // If product doesn’t exist → 404
-    if (!repository.existsById(id)) {
-        return ResponseEntity.notFound().build();
-    }
-
-    // Delete and return 204 No Content
-    repository.deleteById(id);
-    return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build();
 }
 
 }
