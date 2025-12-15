@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.security.core.Authentication;
 @CrossOrigin(origins = "http://localhost:5173") // reac de runs on diff origin than 8080
 @RestController
 @RequestMapping("/api/products")
@@ -29,6 +31,54 @@ public class ProductController {
     @Autowired
     public ProductController(ProductRepository repository) {
         this.repository = repository;
+    }
+
+    // GET dashboard statistics
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        List<Product> allProducts = repository.findAll();
+        
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Total products
+        stats.put("totalProducts", allProducts.size());
+        
+        // Count unique product types
+        long uniqueTypes = allProducts.stream()
+            .map(Product::getType)
+            .distinct()
+            .count();
+        stats.put("uniqueTypes", uniqueTypes);
+        
+        // Count unique farms
+        long uniqueFarms = allProducts.stream()
+            .map(Product::getOriginFarmId)
+            .distinct()
+            .count();
+        stats.put("uniqueFarms", uniqueFarms);
+        
+        // Products by type
+        Map<String, Long> productsByType = allProducts.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                Product::getType,
+                java.util.stream.Collectors.counting()
+            ));
+        stats.put("productsByType", productsByType);
+        
+        // Recent products (last 5)
+        List<Product> recentProducts = allProducts.stream()
+            .sorted((p1, p2) -> p2.getHarvestDate().compareTo(p1.getHarvestDate()))
+            .limit(5)
+            .toList();
+        stats.put("recentProducts", recentProducts);
+        
+        // Total tracking stages
+        long totalTrackingStages = allProducts.stream()
+            .mapToLong(p -> p.getTrackingHistory() != null ? p.getTrackingHistory().size() : 0)
+            .sum();
+        stats.put("totalTrackingStages", totalTrackingStages);
+        
+        return ResponseEntity.ok(stats);
     }
 
     // GET all products with pagination
@@ -176,6 +226,64 @@ public List<Product> searchProducts(
         // Delete and return 204 No Content
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
-}
+    }
+
+    // POST add tracking stage to a product
+    // Permissions: ADMIN or stage-specific roles (FARMER for Farm, PROCESSOR for Processing, etc.)
+    @PreAuthorize("hasAnyRole('ADMIN', 'FARMER', 'PROCESSOR', 'WAREHOUSE_MANAGER', 'DISTRIBUTOR', 'RETAILER')")
+    @PostMapping("/{id}/tracking")
+    public ResponseEntity<?> addTrackingStage(@PathVariable String id, 
+                                               @Valid @RequestBody com.agri.supplytracker.model.TrackingStage trackingStage,
+                                               Authentication authentication) {
+        // Validate user can add this specific stage based on their role
+        String userRole = authentication.getAuthorities().stream()
+            .map(auth -> auth.getAuthority())
+            .filter(auth -> auth.startsWith("ROLE_"))
+            .findFirst()
+            .orElse("");
+        
+        // Check if user's role matches the stage they're trying to add
+        if (!userRole.equals("ROLE_ADMIN")) {
+            boolean authorized = false;
+            String stage = trackingStage.getStage();
+            
+            if (userRole.equals("ROLE_FARMER") && stage.equalsIgnoreCase("Farm")) authorized = true;
+            else if (userRole.equals("ROLE_PROCESSOR") && (stage.equalsIgnoreCase("Processing") || stage.equalsIgnoreCase("Quality Check"))) authorized = true;
+            else if (userRole.equals("ROLE_WAREHOUSE_MANAGER") && stage.equalsIgnoreCase("Warehouse")) authorized = true;
+            else if (userRole.equals("ROLE_DISTRIBUTOR") && stage.equalsIgnoreCase("Distribution")) authorized = true;
+            else if (userRole.equals("ROLE_RETAILER") && stage.equalsIgnoreCase("Retail")) authorized = true;
+            
+            if (!authorized) {
+                return ResponseEntity.status(403).body(Map.of("error", "You are not authorized to add this tracking stage"));
+            }
+        }
+        
+        return repository.findById(id)
+                .map(product -> {
+                    // Set timestamp if not provided
+                    if (trackingStage.getTimestamp() == null) {
+                        trackingStage.setTimestamp(java.time.LocalDateTime.now());
+                    }
+                    
+                    // Add tracking stage to history
+                    product.getTrackingHistory().add(trackingStage);
+                    
+                    // Update product's current location and status
+                    product.setCurrentLocation(trackingStage.getLocation());
+                    product.setStatus(trackingStage.getStage());
+                    
+                    Product saved = repository.save(product);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // GET tracking history for a product
+    @GetMapping("/{id}/tracking")
+    public ResponseEntity<?> getTrackingHistory(@PathVariable String id) {
+        return repository.findById(id)
+                .map(product -> ResponseEntity.ok(product.getTrackingHistory()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
 }

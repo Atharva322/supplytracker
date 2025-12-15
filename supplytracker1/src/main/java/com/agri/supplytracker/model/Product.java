@@ -6,6 +6,9 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Document("products")
 @Data
 @AllArgsConstructor
@@ -30,4 +33,19 @@ public class Product {
     
     @NotBlank(message = "Origin farm ID is required")
     private String originFarmId;
+    
+    // Origin farm name (denormalized for quick access)
+    private String originFarmName;
+    
+    // Current location/stage of the product
+    private String currentLocation;
+    
+    // Destination/target location (e.g., "Mumbai Retail Store", "Delhi Distribution Center")
+    private String destination;
+    
+    // Current status: IN_TRANSIT, AT_FARM, PROCESSING, IN_WAREHOUSE, DELIVERED, etc.
+    private String status;
+    
+    @Builder.Default
+    private List<TrackingStage> trackingHistory = new ArrayList<>();
 }

@@ -27,4 +27,14 @@ public class User {
     private String email;
     
     private Set<String> roles = new HashSet<>();
+    
+    // Stage-specific profile - defines which stage this user handles
+    // Can be: FARMER, PROCESSOR, WAREHOUSE_MANAGER, DISTRIBUTOR, RETAILER
+    private String stageProfile;
+    
+    // Optional: Associated farm ID if user is a FARMER
+    private String associatedFarmId;
+    
+    // Optional: Location/facility this user manages
+    private String location;
 }

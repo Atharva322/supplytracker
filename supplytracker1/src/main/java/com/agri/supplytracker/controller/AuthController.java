@@ -54,8 +54,15 @@ public class AuthController {
         
         User user = userRepository.findByUsername(loginRequest.getUsername()).orElse(null);
         Set<String> roles = user != null ? user.getRoles() : new HashSet<>();
+        
+        AuthResponse response = new AuthResponse(jwt, loginRequest.getUsername(), roles, "Login successful");
+        if (user != null) {
+            response.setStageProfile(user.getStageProfile());
+            response.setLocation(user.getLocation());
+            response.setAssociatedFarmId(user.getAssociatedFarmId());
+        }
 
-        return ResponseEntity.ok(new AuthResponse(jwt, loginRequest.getUsername(), roles, "Login successful"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
@@ -90,7 +97,12 @@ public class AuthController {
         // Auto-login after registration
         final UserDetails userDetails = userDetailsService.loadUserByUsername(registerRequest.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
+        
+        AuthResponse response = new AuthResponse(jwt, registerRequest.getUsername(), roles, "Registration successful");
+        response.setStageProfile(user.getStageProfile());
+        response.setLocation(user.getLocation());
+        response.setAssociatedFarmId(user.getAssociatedFarmId());
 
-        return ResponseEntity.ok(new AuthResponse(jwt, registerRequest.getUsername(), roles, "Registration successful"));
+        return ResponseEntity.ok(response);
     }
 }
