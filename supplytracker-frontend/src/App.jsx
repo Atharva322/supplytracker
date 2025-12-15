@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getProducts, createProduct, updateProduct, deleteProduct, login, register, addTrackingStage, getDashboardStats, getFarms, createFarm, updateFarm, deleteFarm } from "./api";
 import Homepage from "./Homepage";
+import ObjectDetection from "./components/ObjectDetection";
 
 function App() {
   // View states
@@ -60,7 +61,7 @@ function App() {
   });
 
   // Dashboard states  
-  const [activeTab, setActiveTab] = useState("products"); // "dashboard", "products", or "farms"
+  const [activeTab, setActiveTab] = useState("products"); // "dashboard", "products", "farms", or "detection"
   const [dashboardStats, setDashboardStats] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
@@ -735,6 +736,16 @@ function App() {
                 }`}
               >
                 🏞️ Farms
+              </button>
+              <button
+                onClick={() => setActiveTab("detection")}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                  activeTab === "detection"
+                    ? "bg-emerald-500 text-emerald-950 shadow-lg shadow-emerald-500/20"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                }`}
+              >
+                🔍 Detection
               </button>
             </div>
 
@@ -1653,9 +1664,24 @@ function App() {
           </div>
         )}
 
+            {/* Detection View - YOLOv3 Object Detection */}
+            {activeTab === "detection" && (
+              <div className="space-y-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-slate-200">AI Quality Detection</h2>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Upload images of fruits to detect quality using YOLOv3 model
+                    </p>
+                  </div>
+                  <ObjectDetection />
+                </div>
+              </div>
+            )}
+
         {/* Footer note */}
         <p className="mt-6 text-xs text-slate-500">
-          ✅ Dashboard & Tracking features added!
+          ✅ Dashboard & Tracking features added! | 🔍 YOLOv3 Detection integrated!
         </p>
           </main>
         </>
