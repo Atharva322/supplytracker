@@ -27,10 +27,12 @@ import org.springframework.security.core.Authentication;
 public class ProductController {
 
     private final ProductRepository repository;
+    private final ProductStreamController streamController;
 
     @Autowired
-    public ProductController(ProductRepository repository) {
+    public ProductController(ProductRepository repository, ProductStreamController streamController) {
         this.repository = repository;
+        this.streamController = streamController;
     }
 
     // GET dashboard statistics
@@ -158,6 +160,8 @@ public List<Product> searchProducts(
     public ResponseEntity<?> createProduct(@Valid @RequestBody Product product) {
         try {
             Product savedProduct = repository.save(product);
+            // Broadcast to SSE subscribers
+            streamController.broadcastProductUpdate(savedProduct);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -181,6 +185,8 @@ public List<Product> searchProducts(
                     existing.setHarvestDate(updatedProduct.getHarvestDate());
                     existing.setOriginFarmId(updatedProduct.getOriginFarmId());
                     Product saved = repository.save(existing);
+                    // Broadcast to SSE subscribers
+                    streamController.broadcastProductUpdate(saved);
                     return ResponseEntity.ok(saved);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -211,7 +217,10 @@ public List<Product> searchProducts(
             product.setOriginFarmId((String) updates.get("originFarmId"));
         }
 
-        return repository.save(product);
+        Product saved = repository.save(product);
+        // Broadcast to SSE subscribers
+        streamController.broadcastProductUpdate(saved);
+        return saved;
     }
 
     // DELETE product (Admin only)

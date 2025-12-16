@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getProducts, createProduct, updateProduct, deleteProduct, login, register, addTrackingStage, getDashboardStats, getFarms, createFarm, updateFarm, deleteFarm } from "./api";
 import Homepage from "./Homepage";
 import ObjectDetection from "./components/ObjectDetection";
+import GraphQLPlayground from "./components/GraphQLPlayground";
 
 function App() {
   // View states
@@ -746,6 +747,16 @@ function App() {
                 }`}
               >
                 🔍 Detection
+              </button>
+              <button
+                onClick={() => setActiveTab("graphql")}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                  activeTab === "graphql"
+                    ? "bg-emerald-500 text-emerald-950 shadow-lg shadow-emerald-500/20"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                }`}
+              >
+                🚀 GraphQL
               </button>
             </div>
 
@@ -1679,9 +1690,18 @@ function App() {
               </div>
             )}
 
+            {/* GraphQL View */}
+            {activeTab === "graphql" && (
+              <div className="space-y-6">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+                  <GraphQLPlayground />
+                </div>
+              </div>
+            )}
+
         {/* Footer note */}
         <p className="mt-6 text-xs text-slate-500">
-          ✅ Dashboard & Tracking features added! | 🔍 YOLOv3 Detection integrated!
+          ✅ Dashboard & Tracking features added! | 🔍 YOLOv3 Detection integrated! | 🚀 GraphQL API available!
         </p>
           </main>
         </>

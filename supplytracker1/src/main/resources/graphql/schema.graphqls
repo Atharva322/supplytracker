@@ -1,0 +1,115 @@
+# Supply Tracker GraphQL Schema
+
+type Query {
+    # Get all products
+    products: [Product!]!
+    
+    # Get product by ID
+    product(id: ID!): Product
+    
+    # Search products by name or type
+    searchProducts(keyword: String!): [Product!]!
+    
+    # Get products by status
+    productsByStatus(status: String!): [Product!]!
+    
+    # Get products by origin farm
+    productsByFarm(farmId: String!): [Product!]!
+    
+    # Get all users (admin only)
+    users: [User!]!
+    
+    # Get user by ID
+    user(id: ID!): User
+}
+
+type Mutation {
+    # Create a new product
+    createProduct(input: ProductInput!): Product!
+    
+    # Update an existing product
+    updateProduct(id: ID!, input: ProductInput!): Product!
+    
+    # Delete a product
+    deleteProduct(id: ID!): Boolean!
+    
+    # Add tracking stage to product
+    addTrackingStage(productId: ID!, stage: TrackingStageInput!): Product!
+    
+    # Update product status
+    updateProductStatus(id: ID!, status: String!, location: String): Product!
+}
+
+type Subscription {
+    # Subscribe to product updates
+    productUpdated: Product!
+    
+    # Subscribe to new products
+    productCreated: Product!
+    
+    # Subscribe to product status changes
+    productStatusChanged(productId: ID): ProductStatusUpdate!
+}
+
+# Product Type
+type Product {
+    id: ID!
+    name: String!
+    type: String!
+    batchId: String!
+    harvestDate: String!
+    originFarmId: String!
+    originFarmName: String
+    currentLocation: String
+    destination: String
+    status: String
+    trackingHistory: [TrackingStage!]!
+}
+
+# Tracking Stage Type
+type TrackingStage {
+    stage: String!
+    location: String!
+    timestamp: String!
+    notes: String
+    handler: String!
+}
+
+# User Type
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    createdAt: String
+}
+
+# Input Types
+input ProductInput {
+    name: String!
+    type: String!
+    batchId: String!
+    harvestDate: String!
+    originFarmId: String!
+    originFarmName: String
+    currentLocation: String
+    destination: String
+    status: String
+}
+
+input TrackingStageInput {
+    stage: String!
+    location: String!
+    timestamp: String
+    notes: String
+    handler: String!
+}
+
+# Subscription Types
+type ProductStatusUpdate {
+    productId: ID!
+    oldStatus: String
+    newStatus: String!
+    location: String
+    timestamp: String!
+}
