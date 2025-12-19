@@ -1,0 +1,102 @@
+groups:
+  - name: supplytracker_alerts
+    interval: 30s
+    rules:
+      # CSV Import Performance Alert
+      - alert: SlowCSVImport
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri="/api/products/import"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: csv_import
+        annotations:
+          summary: "CSV import is taking too long"
+          description: "95th percentile of CSV import time is {{ $value | humanizeDuration }} (threshold: 5s). Users may be experiencing slow bulk uploads."
+
+      # MongoDB Performance Alert
+      - alert: SlowMongoDBQueries
+        expr: rate(mongodb_driver_commands_seconds_sum[5m]) / rate(mongodb_driver_commands_seconds_count[5m]) > 1
+        for: 3m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "MongoDB queries are slow"
+          description: "Average MongoDB query time is {{ $value | humanizeDuration }} (threshold: 1s). Consider adding indexes or investigating query patterns."
+
+      # API Error Rate Alert
+      - alert: HighAPIErrorRate
+        expr: rate(http_server_requests_seconds_count{uri=~"/api/(products|farms).*",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{uri=~"/api/(products|farms).*"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate on API endpoints"
+          description: "{{ $value | humanizePercentage }} of requests are failing (threshold: 5%). Check application logs immediately."
+
+      # Low Redis Cache Hit Rate
+      - alert: LowCacheHitRate
+        expr: rate(cache_gets{result="hit"}[5m]) / rate(cache_gets[5m]) < 0.5
+        for: 5m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Redis cache hit rate is low"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%). Cache might not be configured optimally."
+
+      # High Memory Usage
+      - alert: HighJVMMemoryUsage
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+        annotations:
+          summary: "JVM heap memory usage is high"
+          description: "Heap memory usage is {{ $value | humanizePercentage }} (threshold: 85%). Application may need more memory or has a memory leak."
+
+      # API Response Time Alert
+      - alert: SlowAPIResponses
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~"/api/.*"}[5m])) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API responses are slow"
+          description: "95th percentile response time is {{ $value | humanizeDuration }} (threshold: 500ms). Users may experience sluggish performance."
+
+      # MongoDB Connection Pool Exhaustion
+      - alert: MongoDBConnectionPoolExhausted
+        expr: mongodb_driver_pool_checkedout >= mongodb_driver_pool_size * 0.9
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "MongoDB connection pool nearly exhausted"
+          description: "{{ $value }} connections in use out of {{ mongodb_driver_pool_size }} total. Increase pool size or investigate connection leaks."
+
+      # Failed Login Attempts (Security)
+      - alert: HighFailedLoginRate
+        expr: rate(http_server_requests_seconds_count{uri="/api/auth/login",status=~"4.."}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High rate of failed login attempts"
+          description: "{{ $value }} failed logins per second (threshold: 0.1/s). Possible brute force attack or user issues."
+
+      # Application Down Alert
+      - alert: ApplicationDown
+        expr: up{job="spring-boot-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "SupplyTracker application is down"
+          description: "Spring Boot application is not responding to health checks. Immediate investigation required."

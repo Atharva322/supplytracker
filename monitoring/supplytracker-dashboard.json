@@ -1,0 +1,338 @@
+{
+  "dashboard": {
+    "title": "SupplyTracker Health Dashboard",
+    "tags": ["supplytracker", "performance", "health"],
+    "timezone": "browser",
+    "editable": true,
+    "refresh": "10s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "CSV Import Performance (95th Percentile)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=\"/api/products/import\"}[5m]))",
+            "legendFormat": "95th Percentile",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Response Time"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "Slow CSV Import",
+          "message": "CSV import taking longer than 5 seconds",
+          "conditions": [
+            {
+              "evaluator": {"params": [5], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ]
+        },
+        "thresholds": [
+          {"value": 5, "op": "gt", "fill": true, "line": true, "colorMode": "critical"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "MongoDB Query Performance",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(mongodb_driver_commands_seconds_sum[5m]) / rate(mongodb_driver_commands_seconds_count[5m])",
+            "legendFormat": "Avg Query Time",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(mongodb_driver_commands_seconds_count[5m])",
+            "legendFormat": "Queries/sec",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Query Time"},
+          {"format": "short", "label": "Queries/sec"}
+        ],
+        "thresholds": [
+          {"value": 1, "op": "gt", "fill": true, "line": true, "colorMode": "critical"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "API Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/api/(products|farms).*\",status=~\"5..\"}[5m]) / rate(http_server_requests_seconds_count{uri=~\"/api/(products|farms).*\"}[5m]) * 100",
+            "legendFormat": "Error Rate %",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{uri=~\"/api/(products|farms).*\",status=~\"2..\"}[5m])",
+            "legendFormat": "Successful Requests/sec",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Error Rate"},
+          {"format": "short", "label": "Requests/sec"}
+        ],
+        "thresholds": [
+          {"value": 5, "op": "gt", "fill": true, "line": true, "colorMode": "critical"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Redis Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(cache_gets{result=\"hit\"}[5m]) / rate(cache_gets[5m]) * 100",
+            "legendFormat": "Cache Hit Rate",
+            "refId": "A"
+          }
+        ],
+        "thresholds": "50,70,90",
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 70, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "API Request Rate by Endpoint",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum by(uri) (rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[5m]))",
+            "legendFormat": "{{uri}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "JVM Heap Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024",
+            "legendFormat": "Used Heap (MB)",
+            "refId": "A"
+          },
+          {
+            "expr": "jvm_memory_max_bytes{area=\"heap\"} / 1024 / 1024",
+            "legendFormat": "Max Heap (MB)",
+            "refId": "B"
+          },
+          {
+            "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
+            "legendFormat": "Usage %",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "mbytes", "label": "Memory"},
+          {"format": "percent"}
+        ],
+        "thresholds": [
+          {"value": 85, "op": "gt", "fill": true, "line": true, "colorMode": "critical"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Top 5 Slowest API Endpoints",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "topk(5, histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~\"/api/.*\"}[5m])))",
+            "legendFormat": "{{uri}}",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "uri": "Endpoint",
+                "Value": "95th Percentile (seconds)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "MongoDB Connection Pool Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "mongodb_driver_pool_checkedout",
+            "legendFormat": "Checked Out Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "mongodb_driver_pool_size",
+            "legendFormat": "Pool Size",
+            "refId": "B"
+          },
+          {
+            "expr": "mongodb_driver_pool_checkedout / mongodb_driver_pool_size * 100",
+            "legendFormat": "Usage %",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Connections"},
+          {"format": "percent"}
+        ],
+        "thresholds": [
+          {"value": 90, "op": "gt", "fill": true, "line": true, "colorMode": "critical"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Failed Login Attempts",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{uri=\"/api/auth/login\",status=~\"4..\"}[5m]))",
+            "legendFormat": "Failed Logins/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.1, "color": "yellow"},
+                {"value": 0.5, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Application Uptime",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 32},
+        "targets": [
+          {
+            "expr": "up{job=\"spring-boot-app\"}",
+            "legendFormat": "Status",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Total Requests (Last Hour)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(increase(http_server_requests_seconds_count[1h]))",
+            "legendFormat": "Total Requests",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Active Users (Unique IPs)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 32},
+        "targets": [
+          {
+            "expr": "count(count by(remote_addr) (http_server_requests_seconds_count))",
+            "legendFormat": "Active Users",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

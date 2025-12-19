@@ -5,6 +5,8 @@ import com.agri.supplytracker.model.Product;
 import com.agri.supplytracker.repository.ProductRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -108,6 +110,7 @@ public class ProductController {
     }
 
     // GET by id
+    @Cacheable(value = "products", key = "#id")
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable String id) {
         return repository.findById(id)
@@ -155,6 +158,7 @@ public List<Product> searchProducts(
 
 
     // POST create with validation (Admin only)
+    @CacheEvict(value = "products", allEntries = true)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createProduct(@Valid @RequestBody Product product) {

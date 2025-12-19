@@ -61,9 +61,11 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/products/stream", "/oauth2/**", "/login/oauth2/**", 
+                .requestMatchers("/api/auth/**", "/api/products/**", "/api/farms/**", 
+                                 "/oauth2/**", "/login/oauth2/**", 
                                  "/graphql", "/graphql/**", 
                                  "/graphiql", "/graphiql/**",
+                                 "/actuator/**",
                                  "/vendor/**", "/assets/**", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
             )
