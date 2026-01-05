@@ -5,6 +5,7 @@ C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\suppl
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\model\Product.java
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\controller\DetectionController.java
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\model\User.java
+C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\config\RedisConfig.java
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\config\SecurityConfig.java
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\dto\RegisterRequest.java
 C:\Users\athar\Desktop\supplytracker\supplytracker1\src\main\java\com\agri\supplytracker\security\JwtAuthenticationFilter.java

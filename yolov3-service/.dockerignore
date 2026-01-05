@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.git/
+.gitignore
+*.md
+.DS_Store
+.vscode/
+.idea/
+*.log
+models/yolov3.weights

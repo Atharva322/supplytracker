@@ -1,0 +1,75 @@
+# Render Blueprint for SupplyTracker
+# See https://render.com/docs/blueprint-spec for more info
+
+services:
+  # Spring Boot Backend
+  - type: web
+    name: supplytracker-backend
+    env: docker
+    dockerfilePath: ./supplytracker1/Dockerfile
+    dockerContext: ./supplytracker1
+    envVars:
+      - key: SPRING_DATA_MONGODB_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: SPRING_DATA_REDIS_HOST
+        fromService:
+          type: redis
+          name: redis
+          property: host
+      - key: SPRING_DATA_REDIS_PORT
+        fromService:
+          type: redis
+          name: redis
+          property: port
+      - key: YOLO_SERVICE_URL
+        fromService:
+          type: web
+          name: yolov3-service
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: JWT_SECRET
+        generateValue: true
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+    healthCheckPath: /actuator/health
+    plan: standard
+
+  # YOLOv3 Python Service
+  - type: web
+    name: yolov3-service
+    env: docker
+    dockerfilePath: ./yolov3-service/Dockerfile
+    dockerContext: ./yolov3-service
+    healthCheckPath: /health
+    plan: standard
+
+  # React Frontend (Static Site)
+  - type: web
+    name: supplytracker-frontend
+    env: static
+    buildCommand: cd supplytracker-frontend && npm install && npm run build
+    staticPublishPath: ./supplytracker-frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: supplytracker-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+databases:
+  # MongoDB is not natively supported on Render
+  # Use MongoDB Atlas instead or a private service
+  # See: https://www.mongodb.com/cloud/atlas
+
+  # Redis Cache
+  - name: redis
+    plan: starter
+    ipAllowList: []

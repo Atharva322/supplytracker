@@ -18,6 +18,7 @@ com\agri\supplytracker\model\Farm$FarmBuilder.class
 com\agri\supplytracker\controller\ProductController.class
 com\agri\supplytracker\controller\ProductStreamController.class
 com\agri\supplytracker\dto\AuthResponse.class
+com\agri\supplytracker\config\RedisConfig.class
 com\agri\supplytracker\graphql\ProductGraphQLController.class
 com\agri\supplytracker\controller\DetectionController.class
 com\agri\supplytracker\repository\UserRepository.class
