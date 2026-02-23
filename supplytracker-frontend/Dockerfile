@@ -13,6 +13,8 @@ RUN npm ci --only=production=false
 COPY . .
 
 # Build application
+ARG VITE_API_URL=http://3.21.103.126:30080
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Production stage with nginx

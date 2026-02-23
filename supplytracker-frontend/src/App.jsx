@@ -3,6 +3,9 @@ import { getProducts, createProduct, updateProduct, deleteProduct, login, regist
 import Homepage from "./Homepage";
 import ObjectDetection from "./components/ObjectDetection";
 import GraphQLPlayground from "./components/GraphQLPlayground";
+import useNotifications from './hooks/useNotifications';
+import NotificationBell from './components/NotificationBell';
+
 
 function App() {
   // View states
@@ -11,6 +14,14 @@ function App() {
   // Auth states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
+    // Notification hook
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications(currentUser, localStorage.getItem('token'));
   const [userRoles, setUserRoles] = useState([]);
   const [userStageProfile, setUserStageProfile] = useState("");
   const [userLocation, setUserLocation] = useState("");
@@ -674,6 +685,7 @@ function App() {
                   React + Tailwind · Spring Boot · MongoDB
                 </p>
               </div>
+            </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex flex-col items-end">
@@ -696,6 +708,16 @@ function App() {
                     )}
                   </div>
                 </div>
+                
+                {/* ADD NOTIFICATIONBELL HERE */}
+                <NotificationBell
+                  unreadCount={unreadCount}
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                  onDeleteNotification={deleteNotification}
+                />
+                
                 <button
                   onClick={handleLogout}
                   className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-700 transition-colors"
@@ -703,7 +725,6 @@ function App() {
                   Logout
                 </button>
               </div>
-            </div>
           </header>
 
           <main className="container mx-auto max-w-7xl px-6 py-8">
