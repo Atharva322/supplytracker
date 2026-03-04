@@ -15,6 +15,7 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 
 # Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring

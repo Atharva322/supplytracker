@@ -3,6 +3,8 @@ package com.agri.supplytracker.controller;
 import com.agri.supplytracker.exception.ProductNotFoundException;
 import com.agri.supplytracker.model.Product;
 import com.agri.supplytracker.repository.ProductRepository;
+import com.agri.supplytracker.service.NotificationService;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -15,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +30,13 @@ public class ProductController {
 
     private final ProductRepository repository;
     private final ProductStreamController streamController;
+    private final NotificationService notificationService;
 
     @Autowired
-    public ProductController(ProductRepository repository, ProductStreamController streamController) {
+    public ProductController(ProductRepository repository, ProductStreamController streamController, NotificationService notificationService) {
         this.repository = repository;
         this.streamController = streamController;
+        this.notificationService = notificationService;
     }
 
     // GET dashboard statistics
@@ -157,6 +159,7 @@ public List<Product> searchProducts(
 }
 
 
+
     // POST create with validation (Admin only)
     @CacheEvict(value = "products", allEntries = true)
     @PreAuthorize("hasRole('ADMIN')")
@@ -166,6 +169,18 @@ public List<Product> searchProducts(
             Product savedProduct = repository.save(product);
             // Broadcast to SSE subscribers
             streamController.broadcastProductUpdate(savedProduct);
+
+            // Notify admins
+            // Notify admins
+            notificationService.notifyAdmins(
+                "PRODUCT_CREATED",
+                "New Product Created",
+                "Product '" + savedProduct.getName() + "' created by system",
+                savedProduct.getId(),
+                savedProduct.getName(),
+                "system",
+                "system"
+            );
             return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -191,6 +206,7 @@ public List<Product> searchProducts(
                     Product saved = repository.save(existing);
                     // Broadcast to SSE subscribers
                     streamController.broadcastProductUpdate(saved);
+
                     return ResponseEntity.ok(saved);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -286,6 +302,16 @@ public List<Product> searchProducts(
                     product.setStatus(trackingStage.getStage());
                     
                     Product saved = repository.save(product);
+                    // In addTrackingStage method, after adding:
+                    notificationService.notifyAdmins(
+                        "TRACKING_STAGE_ADDED",
+                        "Tracking Stage Added",
+                        "Stage '" + trackingStage.getStage() + "' added to product '" + product.getName() + "'",
+                        product.getId(),
+                        product.getName(),
+                        authentication.getName(),
+                        authentication.getName()
+                    );
                     return ResponseEntity.ok(saved);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());

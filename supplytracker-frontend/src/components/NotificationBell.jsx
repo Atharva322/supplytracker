@@ -12,6 +12,7 @@ const NotificationBell = ({
   const [displayedNotifications, setDisplayedNotifications] = useState([]);
 
   useEffect(() => {
+    console.log('Fetched notifications:', notifications);
     setDisplayedNotifications(notifications.slice(0, 10));
   }, [notifications]);
 
@@ -45,110 +46,115 @@ const NotificationBell = ({
     }
   };
 
-  const formatTime = (createdAt) => {
-    const date = new Date(createdAt);
-    const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
-  };
-
   return (
-    <div className="notification-container">
-      {/* Notification Bell */}
+    <>
+      {/* Notification Bell - Fixed on Right Side */}
       <button
-        className="notification-bell"
+        className="fixed right-6 top-20 z-40 notification-bell-fixed"
         onClick={() => setIsOpen(!isOpen)}
         title="Notifications"
       >
         🔔
         {unreadCount > 0 && (
-          <span className="notification-badge">
+          <span className="notification-badge-fixed">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Notification Dropdown */}
+      {/* Notification Panel - Right Side Popup */}
       {isOpen && (
-        <div className="notification-dropdown">
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-30 bg-black/30"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Right Side Panel */}
+          <div className="notification-modal-center">
           {/* Header */}
-          <div className="notification-header">
+          <div className="notification-panel-header">
             <h3>Notifications</h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-2xl leading-none text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+            {/* Mark All As Read Button */}
             {unreadCount > 0 && (
-              <button
-                className="mark-all-read-btn"
-                onClick={() => {
-                  onMarkAllAsRead();
-                  setIsOpen(false);
-                }}
-                title="Mark all as read"
-              >
-                ✓ Mark all
-              </button>
-            )}
-          </div>
-
-          {/* Notifications List */}
-          <div className="notification-list">
-            {displayedNotifications.length === 0 ? (
-              <div className="empty-notifications">
-                <p>📭 No notifications</p>
-              </div>
-            ) : (
-              displayedNotifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`notification-item ${
-                    notification.read ? 'read' : 'unread'
-                  } ${getNotificationColor(notification.type)}`}
+              <div className="px-4 py-2 border-b border-gray-200 bg-blue-50">
+                <button
+                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
                   onClick={() => {
-                    if (!notification.read) {
-                      onMarkAsRead(notification.id);
-                    }
+                    onMarkAllAsRead();
+                    setIsOpen(false);
                   }}
+                  title="Mark all as read"
                 >
-                  <div className="notification-icon">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="notification-content">
-                    <p className="notification-title">{notification.title}</p>
-                    <p className="notification-message">{notification.message}</p>
-                    <small className="notification-time">
-                      {formatTime(notification.createdAt)}
-                    </small>
-                  </div>
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteNotification(notification.id);
-                    }}
-                    title="Delete"
-                  >
-                    ✕
-                  </button>
+                  ✓ Mark all as read
+                </button>
+              </div>
+            )}
+
+            {/* Notifications List */}
+            <div className="notification-panel-list">
+              {displayedNotifications.length === 0 ? (
+                <div className="empty-notifications-panel">
+                  <p>📭 No notifications</p>
                 </div>
-              ))
+              ) : (
+                displayedNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`notification-panel-item ${
+                      notification.read ? 'read' : 'unread'
+                    } ${getNotificationColor(notification.type)}`}
+                    onClick={() => {
+                      if (!notification.read) {
+                        onMarkAsRead(notification.id);
+                      }
+                    }}
+                  >
+                    <div className="notification-panel-icon">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="notification-panel-content">
+                      <p className="notification-panel-title" style={{ color: 'black' }}>
+                        {notification.title}
+                      </p>
+                      <p className="notification-panel-message" style={{ color: 'black' }}>
+                        {notification.message}
+                      </p>
+                    </div>
+                    <button
+                      className="notification-panel-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteNotification(notification.id);
+                      }}
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            {notifications.length > 10 && (
+              <div className="notification-panel-footer">
+                <small>{notifications.length} total notifications</small>
+              </div>
             )}
           </div>
-
-          {/* Footer */}
-          {notifications.length > 10 && (
-            <div className="notification-footer">
-              <small>{notifications.length} total notifications</small>
-            </div>
-          )}
-        </div>
+        </>
       )}
-    </div>
+    </>
   );
 };
 
