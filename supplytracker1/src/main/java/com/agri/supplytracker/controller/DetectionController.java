@@ -1,5 +1,8 @@
 package com.agri.supplytracker.controller;
 
+import com.agri.supplytracker.service.ClassifierService;
+import com.agri.supplytracker.service.BedrockService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -9,7 +12,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.io.IOException;
 import java.util.*;
 
 @RestController
@@ -17,27 +20,16 @@ import java.util.*;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
 public class DetectionController {
 
-    @Value("${yolo.service.url:http://localhost:8000}")
+    @Value("${yolo.service.url:http://localhost:5000}")
     private String yoloServiceUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
-
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
-        try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(
-                yoloServiceUrl + "/health", 
-                Map.class
-            );
-            return ResponseEntity.ok(response.getBody());
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", "error");
-            error.put("message", "YOLOv3 service is not available");
-            error.put("details", e.getMessage());
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
-        }
-    }
+    
+    @Autowired
+    private ClassifierService classifierService;
+    
+    @Autowired
+    private BedrockService bedrockService;
 
     @PostMapping("/detect")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -75,7 +67,24 @@ public class DetectionController {
                 Map.class
             );
 
-            return ResponseEntity.ok(response.getBody());
+            Map<String, Object> yoloResult = response.getBody();
+            
+            // Extract labels from YOLO response
+            List<String> labels = extractLabels(yoloResult);
+            
+            // Add classification using ClassifierService
+            String classification = classifierService.classifyProduct(labels);
+            yoloResult.put("classification", classification);
+            
+            // Add AI description using Bedrock
+            try {
+                String description = bedrockService.generateImageDescription(labels);
+                yoloResult.put("aiDescription", description);
+            } catch (Exception e) {
+                yoloResult.put("aiDescription", "Unable to generate description: " + e.getMessage());
+            }
+
+            return ResponseEntity.ok(yoloResult);
 
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
@@ -112,7 +121,24 @@ public class DetectionController {
                 Map.class
             );
 
-            return ResponseEntity.ok(response.getBody());
+            Map<String, Object> qualityResult = response.getBody();
+            
+            // Extract labels
+            List<String> labels = extractLabels(qualityResult);
+            
+            // Add classification
+            String classification = classifierService.classifyProduct(labels);
+            qualityResult.put("classification", classification);
+            
+            // Add AI description
+            try {
+                String description = bedrockService.generateImageDescription(labels);
+                qualityResult.put("aiDescription", description);
+            } catch (Exception e) {
+                qualityResult.put("aiDescription", "Unable to generate description: " + e.getMessage());
+            }
+
+            return ResponseEntity.ok(qualityResult);
 
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
@@ -123,50 +149,108 @@ public class DetectionController {
         }
     }
 
-    @PostMapping("/batch-detect")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
-    public ResponseEntity<Map<String, Object>> batchDetect(
-            @RequestParam("files") MultipartFile[] files) {
+    @PostMapping("/analyze")
+    public ResponseEntity<Map<String, Object>> analyzeImage(
+            @RequestParam("image") MultipartFile image) {
         
         try {
-            if (files.length == 0) {
+            // Validate file
+            if (image.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "No files provided"));
+                    .body(Map.of("success", false, "message", "File is empty"));
             }
 
+            // Validate file type
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "File must be an image"));
+            }
+
+            // Prepare multipart request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            for (MultipartFile file : files) {
-                body.add("files", new MultipartFileResource(file));
-            }
+            body.add("file", new MultipartFileResource(image));
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = 
                 new HttpEntity<>(body, headers);
 
+            // Call Python YOLO service
             ResponseEntity<Map> response = restTemplate.postForEntity(
-                yoloServiceUrl + "/batch-detect",
+                yoloServiceUrl + "/detect",
                 requestEntity,
                 Map.class
             );
 
-            return ResponseEntity.ok(response.getBody());
+            Map<String, Object> yoloResult = response.getBody();
+            
+            // Extract labels from YOLO response
+            List<String> labels = extractLabels(yoloResult);
+            
+            // Add classification using ClassifierService
+            String classification = classifierService.classifyProduct(labels);
+            
+            // Add AI description using Bedrock
+            String description;
+            try {
+                description = bedrockService.generateImageDescription(labels);
+            } catch (Exception e) {
+                description = "Unable to generate description: " + e.getMessage();
+            }
+            
+            // Build response
+            Map<String, Object> result = new HashMap<>();
+            result.put("imageUrl", yoloResult.get("imageUrl"));
+            result.put("labels", labels);
+            result.put("classification", classification);
+            result.put("aiDescription", description);
+            result.put("status", "success");
+
+            return ResponseEntity.ok(result);
 
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", "Batch detection failed");
-            error.put("error", e.getMessage());
+            error.put("error", "Internal server error");
+            error.put("message", e.getMessage());
+            error.put("status", 500);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
+    
+    // Helper method to extract labels from YOLO response
+    private List<String> extractLabels(Map<String, Object> yoloResult) {
+        List<String> labels = new ArrayList<>();
+        
+        if (yoloResult != null && yoloResult.containsKey("detections")) {
+            Object detectionsObj = yoloResult.get("detections");
+            if (detectionsObj instanceof List) {
+                List<?> detections = (List<?>) detectionsObj;
+                for (Object detection : detections) {
+                    if (detection instanceof Map) {
+                        Map<?, ?> detectionMap = (Map<?, ?>) detection;
+                        if (detectionMap.containsKey("class")) {
+                            labels.add(detectionMap.get("class").toString());
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback: if no detections, use a default label
+        if (labels.isEmpty()) {
+            labels.add("Unknown Product");
+        }
+        
+        return labels;
+    }
 
-    // Helper class to wrap MultipartFile for RestTemplate
+    // Helper class for multipart file handling
     private static class MultipartFileResource extends ByteArrayResource {
         private final String filename;
 
-        public MultipartFileResource(MultipartFile multipartFile) throws Exception {
+        public MultipartFileResource(MultipartFile multipartFile) throws IOException {
             super(multipartFile.getBytes());
             this.filename = multipartFile.getOriginalFilename();
         }

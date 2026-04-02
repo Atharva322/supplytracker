@@ -185,7 +185,7 @@ function ObjectDetection() {
                       Quality Score
                     </h3>
                     <span className="text-4xl font-bold text-emerald-600">
-                      {results.quality_score}%
+                      {results.quality_score || 'N/A'}%
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -194,11 +194,11 @@ function ObjectDetection() {
                     </span>
                     <div>
                       <p className="text-lg font-semibold text-gray-800">
-                        Grade: {results.grade}
+                        Grade: {results.grade || 'N/A'}
                       </p>
                       <p className="text-sm text-gray-600">
                         Status: <span className={results.status === 'approved' ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                          {results.status.toUpperCase()}
+                          {results.status?.toUpperCase() || 'N/A'}
                         </span>
                       </p>
                     </div>
@@ -231,7 +231,7 @@ function ObjectDetection() {
 
                 <div className="bg-emerald-50 p-4 rounded-xl border-2 border-emerald-200">
                   <p className="text-lg font-bold text-emerald-800 mb-3">
-                    🎯 Detected {results.count} object{results.count !== 1 ? 's' : ''}
+                    🎯 Detected {results.count || 0} object{results.count !== 1 ? 's' : ''}
                   </p>
 
                   <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -241,14 +241,14 @@ function ObjectDetection() {
                         className="bg-white p-3 rounded-lg border border-emerald-200 flex items-center justify-between"
                       >
                         <div>
-                          <p className="font-semibold text-gray-800">{det.class}</p>
+                          <p className="font-semibold text-gray-800">{det.class || 'N/A'}</p>
                           <p className="text-sm text-gray-600">
-                            Position: ({det.center.x}, {det.center.y})
+                            Position: ({det.center?.x || 'N/A'}, {det.center?.y || 'N/A'})
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-emerald-600">
-                            {(det.confidence * 100).toFixed(1)}%
+                            {det.confidence ? (det.confidence * 100).toFixed(1) : 'N/A'}%
                           </p>
                           <p className="text-xs text-gray-500">confidence</p>
                         </div>

@@ -12,7 +12,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 @Component
@@ -32,6 +33,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
         
+        // Validate email exists
+        if (email == null || email.isEmpty()) {
+            getRedirectStrategy().sendRedirect(request, response, 
+                "http://localhost:5173/login?error=" + URLEncoder.encode("Email not found in OAuth response", StandardCharsets.UTF_8));
+            return;
+        }
+        
         // Find or create user
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User newUser = new User();
@@ -48,7 +56,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // Redirect to frontend main page with token and roles
         String roles = String.join(",", user.getRoles());
         String redirectUrl = String.format("http://localhost:5173/?token=%s&username=%s&roles=%s",
-                jwt, user.getUsername(), roles);
+                URLEncoder.encode(jwt, StandardCharsets.UTF_8), 
+                URLEncoder.encode(user.getUsername(), StandardCharsets.UTF_8), 
+                URLEncoder.encode(roles, StandardCharsets.UTF_8));
         
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }

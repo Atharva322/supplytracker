@@ -1,26 +1,40 @@
-﻿# ---- Java / Maven / Spring Boot ----
-backend/target/
-supplytracker1/target/
-backend/.idea/
-backend/.classpath
-backend/.project
-backend/.settings/
-*.iml
+﻿# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# ---- Node / React / Vite ----
-frontend/node_modules/
-supplytracker-frontend/node_modules/
-frontend/.vite/
-frontend/dist/
+node_modules
+dist
+dist-ssr
+*.local
 
-# ---- Python / YOLOv3 Service ----
-yolov3-service/venv/
-yolov3-service/__pycache__/
-yolov3-service/*.pyc
-yolov3-service/models/yolov3.weights
-
-# ---- OS / Editor files ----
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
-.vscode/
-env-config.md
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sensitive files
+*.env
+.env
+.env.local
+.env.production
+.env.development
+AWS REKOGNITION ACCESS KEY.txt
+credentials.json
+secrets.json
+config.json
+
+# AWS credentials
+aws-credentials.txt
+*.pem
+*.key

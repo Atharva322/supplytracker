@@ -1,0 +1,69 @@
+# Server Configuration
+server.port=8080
+
+# JWT Configuration
+jwt.secret=YOUR_JWT_SECRET_HERE_MINIMUM_32_CHARACTERS
+
+# YOLO Detection Service
+yolo.service.url=http://localhost:5000
+
+# MongoDB Configuration
+spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
+
+# GraphQL Configuration
+spring.graphql.graphiql.enabled=true
+spring.graphql.graphiql.path=/graphiql
+spring.graphql.path=/graphql
+spring.graphql.websocket.path=/graphql
+spring.graphql.schema.printer.enabled=true
+
+# Redis Configuration
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.data.redis.password=
+spring.data.redis.timeout=60000
+
+# Actuator Configuration
+management.endpoints.web.exposure.include=health,info,metrics,prometheus
+management.endpoint.health.show-details=always
+management.metrics.export.prometheus.enabled=true
+management.metrics.distribution.percentiles-histogram.http.server.requests=true
+
+# Application Info
+info.app.name=SupplyTracker
+info.app.version=1.0-SNAPSHOT
+info.app.description=Agricultural Supply Chain Tracker
+
+# Logging Configuration
+logging.level.root=INFO
+logging.level.com.agri.supplytracker=DEBUG
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+logging.file.name=logs/supplytracker.log
+logging.file.max-size=10MB
+logging.file.max-history=30
+
+# File Upload Configuration
+spring.servlet.multipart.max-file-size=50MB
+spring.servlet.multipart.max-request-size=50MB
+
+# AWS Configuration
+aws.accessKeyId=YOUR_AWS_ACCESS_KEY_ID
+aws.secretAccessKey=YOUR_AWS_SECRET_ACCESS_KEY
+aws.region=us-east-2
+aws.s3.bucket=your-s3-bucket-name
+
+# AWS Bedrock Configuration
+aws.bedrock.model-id=amazon.nova-lite-v1:0
+aws.bedrock.max-tokens=300
+aws.bedrock.region=us-east-2
+
+# Google OAuth2 Configuration
+spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
+spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
+spring.security.oauth2.client.registration.google.redirect-uri=http://localhost:8080/login/oauth2/code/google
+spring.security.oauth2.client.registration.google.scope=profile,email
+spring.security.oauth2.client.registration.google.authorization-grant-type=authorization_code
+spring.security.oauth2.client.provider.google.authorization-uri=https://accounts.google.com/o/oauth2/auth
+spring.security.oauth2.client.provider.google.token-uri=https://oauth2.googleapis.com/token
+spring.security.oauth2.client.provider.google.user-info-uri=https://www.googleapis.com/oauth2/v3/userinfo
+spring.security.oauth2.client.provider.google.user-name-attribute=sub

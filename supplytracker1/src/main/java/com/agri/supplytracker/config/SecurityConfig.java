@@ -61,19 +61,34 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/auth/**", "/api/products/**", "/api/farms/**", 
-                                 "/oauth2/**", "/login/oauth2/**", 
-                                 "/graphql", "/graphql/**", 
-                                 "/graphiql", "/graphiql/**",
-                                 "/actuator/**",
-                                 "/vendor/**", "/assets/**", "/favicon.ico", "/ws/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/**", 
+                    "/auth/**", 
+                    "/api/products/**", 
+                    "/api/farms/**",
+                    "/oauth2/**", 
+                    "/login/oauth2/**",
+                    "/login/oauth2/code/**",
+                    "/login/oauth2/code/google",
+                    "/graphql", 
+                    "/graphql/**",
+                    "/graphiql", 
+                    "/graphiql/**",
+                    "/actuator/**",
+                    "/vendor/**", 
+                    "/assets/**", 
+                    "/favicon.ico", 
+                    "/ws/**", 
+                    "/api/detection/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
-/*
             .oauth2Login(oauth2 -> oauth2
+                .loginPage("/oauth2/authorization/google")
+                .defaultSuccessUrl("http://localhost:5173/", true)
                 .successHandler(oAuth2LoginSuccessHandler)
+                .permitAll()
             )
-*/
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -87,7 +102,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-        "http://localhost:5173",    // <-- ADD THIS LINE
+            "http://localhost:5173",
             "http://localhost:3000",
             "http://localhost",
             "http://3.21.103.126:30000",
