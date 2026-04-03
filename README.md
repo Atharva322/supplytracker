@@ -666,8 +666,6 @@ This project is open source and available under the MIT License.
 
 **Atharva**
 - GitHub: [@Atharva322](https://github.com/Atharva322)
-- LinkedIn: [Your LinkedIn Profile]
-- Email: your.email@example.com
 
 ## 🙏 Acknowledgments
 
@@ -686,13 +684,7 @@ This project is open source and available under the MIT License.
 - CREATE_ADMIN_USER.md - Admin user creation guide
 - application.properties.example - Configuration template
 
-## 🎓 Learning Resources
 
-- [YOLOv3 Paper](https://arxiv.org/abs/1804.02767)
-- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
-- [React Documentation](https://react.dev)
-- [AWS Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com)
 
 ---
 
