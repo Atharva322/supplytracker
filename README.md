@@ -66,7 +66,7 @@ A full-stack agricultural supply chain management system with integrated AI obje
 - **WebSocket** - Real-time notifications
 
 ### Backend
-- **Spring Boot 3.1.1** - Application framework
+- **Spring Boot 3.3.6** - Application framework (Java 21 LTS)
 - **Spring Security** - Authentication and authorization
 - **Spring Data MongoDB** - NoSQL database integration
 - **Spring OAuth2 Client** - Google OAuth integration
@@ -93,8 +93,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 
 Before running this project, make sure you have:
 
-- **Java 17** or higher
-- **Maven 3.6+**
+- **Java 21** (LTS) or higher
+- **Maven 3.9+**
 - **Node.js 18+** and npm
 - **Python 3.10+** with pip
 - **MongoDB 4.4+** (running on `localhost:27017`)
