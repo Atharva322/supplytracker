@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -23,7 +25,14 @@ public class DetectionController {
     @Value("${yolo.service.url:http://localhost:5000}")
     private String yoloServiceUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public DetectionController() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10_000); // 10s connect
+        factory.setReadTimeout(60_000);    // 60s read (YOLO inference on CPU)
+        this.restTemplate = new RestTemplate(factory);
+    }
     
     @Autowired
     private ClassifierService classifierService;
@@ -32,7 +41,7 @@ public class DetectionController {
     private BedrockService bedrockService;
 
     @PostMapping("/detect")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Map<String, Object>> detectObjects(
             @RequestParam("file") MultipartFile file) {
         
@@ -86,20 +95,26 @@ public class DetectionController {
 
             return ResponseEntity.ok(yoloResult);
 
+        } catch (RestClientResponseException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Image could not be analyzed. Please use a clear, well-lit photo.");
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", "Detection failed");
+            error.put("message", "Detection failed: " + e.getMessage());
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PostMapping("/quality-check")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Map<String, Object>> qualityCheck(
             @RequestParam("file") MultipartFile file) {
-        
+
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -112,7 +127,7 @@ public class DetectionController {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new MultipartFileResource(file));
 
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = 
+            HttpEntity<MultiValueMap<String, Object>> requestEntity =
                 new HttpEntity<>(body, headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(
@@ -122,15 +137,12 @@ public class DetectionController {
             );
 
             Map<String, Object> qualityResult = response.getBody();
-            
-            // Extract labels
+
             List<String> labels = extractLabels(qualityResult);
-            
-            // Add classification
+
             String classification = classifierService.classifyProduct(labels);
             qualityResult.put("classification", classification);
-            
-            // Add AI description
+
             try {
                 String description = bedrockService.generateImageDescription(labels);
                 qualityResult.put("aiDescription", description);
@@ -140,10 +152,16 @@ public class DetectionController {
 
             return ResponseEntity.ok(qualityResult);
 
+        } catch (RestClientResponseException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Image could not be analyzed. Please use a clear, well-lit photo.");
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", "Quality check failed");
+            error.put("message", "Quality check failed: " + e.getMessage());
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }

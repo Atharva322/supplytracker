@@ -7,8 +7,6 @@ import com.agri.supplytracker.service.NotificationService;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.core.Authentication;
-@CrossOrigin(origins = "http://localhost:5173") // reac de runs on diff origin than 8080
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -112,7 +110,6 @@ public class ProductController {
     }
 
     // GET by id
-    @Cacheable(value = "products", key = "#id")
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable String id) {
         return repository.findById(id)
@@ -161,7 +158,6 @@ public List<Product> searchProducts(
 
 
     // POST create with validation (Admin only)
-    @CacheEvict(value = "products", allEntries = true)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createProduct(@Valid @RequestBody Product product) {

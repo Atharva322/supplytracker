@@ -14,6 +14,7 @@ function App() {
   // Auth states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('token') || '');
     // Notification hook
   const {
     notifications,
@@ -21,7 +22,7 @@ function App() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-  } = useNotifications(currentUser, localStorage.getItem('token'));
+  } = useNotifications(currentUser, authToken);
   const [userRoles, setUserRoles] = useState([]);
   const [userStageProfile, setUserStageProfile] = useState("");
   const [userLocation, setUserLocation] = useState("");
@@ -102,6 +103,7 @@ function App() {
     if (urlToken && urlUsername) {
       // OAuth2 login successful
       localStorage.setItem("token", urlToken);
+      setAuthToken(urlToken);
       localStorage.setItem("username", urlUsername);
       const rolesArray = urlRoles ? urlRoles.split(',') : ['ROLE_USER'];
       localStorage.setItem("roles", JSON.stringify(rolesArray));
@@ -180,6 +182,7 @@ function App() {
 
       if (response.token) {
         localStorage.setItem("token", response.token);
+        setAuthToken(response.token);
         localStorage.setItem("username", response.username);
         localStorage.setItem("roles", JSON.stringify(response.roles || []));
         if (response.stageProfile) localStorage.setItem("stageProfile", response.stageProfile);
@@ -211,6 +214,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    setAuthToken('');
     localStorage.removeItem("username");
     localStorage.removeItem("roles");
     localStorage.removeItem("stageProfile");

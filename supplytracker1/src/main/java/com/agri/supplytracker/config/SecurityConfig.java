@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -79,9 +80,16 @@ public class SecurityConfig {
                     "/assets/**", 
                     "/favicon.ico", 
                     "/ws/**", 
-                    "/api/detection/**"
+                    "/api/detection/**",
+                    "/api/notifications/**"
                 ).permitAll()
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .defaultAuthenticationEntryPointFor(
+                    apiAuthEntryPoint(),
+                    request -> request.getRequestURI().startsWith("/api/")
+                )
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/oauth2/authorization/google")
@@ -99,10 +107,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AuthenticationEntryPoint apiAuthEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(401);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
+        };
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5173",
+            "http://localhost:5174",
             "http://localhost:3000",
             "http://localhost",
             "http://3.21.103.126:30000",

@@ -27,9 +27,9 @@ output_layers = []
 colors = []
 
 # Model file paths
-MODEL_DIR = "models"
-CFG_PATH = os.path.join(MODEL_DIR, "yolov3.cfg")
-WEIGHTS_PATH = os.path.join(MODEL_DIR, "yolov3.weights")
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+CFG_PATH = os.environ.get("YOLO_CFG_PATH", r"C:\Users\athar\Downloads\yolov3.cfg")
+WEIGHTS_PATH = os.environ.get("YOLO_WEIGHTS_PATH", r"C:\Users\athar\Downloads\yolov3_custom_final.weights")
 CLASSES_PATH = os.path.join(MODEL_DIR, "classes.txt")
 
 # Detection parameters

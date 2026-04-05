@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { apiClient } from '../api';
 
 let stompClient = null;
 let isConnected = false;
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'http://localhost:8080/api';
+const WS_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 
 const useNotifications = (userId, token) => {
@@ -26,26 +25,16 @@ const useNotifications = (userId, token) => {
     console.log('📥 Fetching notifications...');
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiClient.get('/notifications');
+      const data = response.data;
+      console.log('✅ Notifications fetched:', data);
+      setNotifications(Array.isArray(data) ? data : []);
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Notifications fetched:', data);
-        setNotifications(Array.isArray(data) ? data : []);
-
-        // Calculate unread count
-        const notifArray = Array.isArray(data) ? data : [];
-        const unread = notifArray.filter((n) => !n.read).length;
-        setUnreadCount(unread);
-        console.log('📊 Unread count:', unread);
-      } else {
-        console.error('❌ Failed to fetch notifications, status:', response.status);
-      }
+      // Calculate unread count
+      const notifArray = Array.isArray(data) ? data : [];
+      const unread = notifArray.filter((n) => !n.read).length;
+      setUnreadCount(unread);
+      console.log('📊 Unread count:', unread);
     } catch (err) {
       console.error('❌ Error fetching notifications:', err);
       setError(err.message);
@@ -60,18 +49,10 @@ const useNotifications = (userId, token) => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📊 Unread count response:', data);
-        setUnreadCount(data.unreadCount || 0);
-      }
+      const response = await apiClient.get('/notifications/unread-count');
+      const data = response.data;
+      console.log('📊 Unread count response:', data);
+      setUnreadCount(data.unreadCount || 0);
     } catch (err) {
       console.error('Error fetching unread count:', err);
     }
@@ -112,7 +93,7 @@ const useNotifications = (userId, token) => {
         return;
       }
 
-      const socket = new window.SockJS(`${API_BASE_URL.replace('/api', '')}/ws/notifications`);
+      const socket = new window.SockJS(`${WS_BASE_URL}/ws/notifications`);
       stompClient = window.Stomp.over(socket);
 
       stompClient.connect(
@@ -164,20 +145,11 @@ const useNotifications = (userId, token) => {
   const markAsRead = useCallback(
     async (notificationId) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
-          );
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
+        await apiClient.put(`/notifications/${notificationId}/read`);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (err) {
         console.error('Error marking notification as read:', err);
       }
@@ -188,18 +160,9 @@ const useNotifications = (userId, token) => {
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
-      }
+      await apiClient.put('/notifications/read-all');
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
     } catch (err) {
       console.error('Error marking all as read:', err);
     }
@@ -209,17 +172,8 @@ const useNotifications = (userId, token) => {
   const deleteNotification = useCallback(
     async (notificationId) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-        }
+        await apiClient.delete(`/notifications/${notificationId}`);
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       } catch (err) {
         console.error('Error deleting notification:', err);
       }

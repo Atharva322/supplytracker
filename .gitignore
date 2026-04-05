@@ -38,3 +38,7 @@ config.json
 aws-credentials.txt
 *.pem
 *.key
+# Maven build output
+supplytracker1/target/
+supplytracker1/logs/
+yolov3-service/__pycache__/
