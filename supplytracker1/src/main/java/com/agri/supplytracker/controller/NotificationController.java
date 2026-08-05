@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = "${cors.allowed.origins:http://localhost:5173,http://localhost:5174}")
 public class NotificationController {
     
     @Autowired
@@ -38,8 +37,8 @@ public class NotificationController {
     }
 
     @PutMapping("/{notificationId}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable String notificationId) {
-        Notification notification = notificationService.markAsRead(notificationId);
+    public ResponseEntity<?> markAsRead(@PathVariable String notificationId, Authentication authentication) {
+        Notification notification = notificationService.markAsRead(notificationId, authentication.getName());
         if (notification == null) {
             return ResponseEntity.status(404).body("Notification not found");
         }
@@ -57,8 +56,10 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{notificationId}")
-    public ResponseEntity<?> deleteNotification(@PathVariable String notificationId) {
-        notificationService.deleteNotification(notificationId);
+    public ResponseEntity<?> deleteNotification(@PathVariable String notificationId, Authentication authentication) {
+        if (!notificationService.deleteNotification(notificationId, authentication.getName())) {
+            return ResponseEntity.status(404).body(Map.of("message", "Notification not found"));
+        }
         return ResponseEntity.ok(Map.of("message", "Notification deleted"));
     }
 }

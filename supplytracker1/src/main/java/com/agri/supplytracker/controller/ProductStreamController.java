@@ -1,106 +1,68 @@
 package com.agri.supplytracker.controller;
 
 import com.agri.supplytracker.model.Product;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-/**
- * Controller for Server-Sent Events (SSE) streaming of product updates
- */
+/** Authenticated, user-scoped product event stream. */
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class ProductStreamController {
-
     private static final Logger log = LoggerFactory.getLogger(ProductStreamController.class);
+    private static final long TIMEOUT_MS = Duration.ofMinutes(5).toMillis();
+    private final Map<String, List<SseEmitter>> emittersByUser = new ConcurrentHashMap<>();
 
-    // List of active SSE emitters
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
-    public ProductStreamController() {
-        // Send heartbeat every 30 seconds to keep connections alive
-        executor.scheduleAtFixedRate(this::sendHeartbeat, 30, 30, TimeUnit.SECONDS);
-    }
-
-    /**
-     * SSE endpoint for streaming product updates
-     * Clients can connect to this endpoint to receive real-time product updates
-     */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @PreAuthorize("permitAll()") // Allow all users to subscribe
-    public SseEmitter streamProducts(@RequestParam(required = false) String token) {
-        log.info("New SSE connection established. Total connections: {}", emitters.size() + 1);
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // No timeout
-        
-        emitters.add(emitter);
-        
-        // Remove emitter when completed or timed out
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((ex) -> emitters.remove(emitter));
-        
-        // Send initial connection message
+    public SseEmitter streamProducts(Authentication authentication) {
+        String username = authentication.getName();
+        SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
+        emittersByUser.computeIfAbsent(username, ignored -> new CopyOnWriteArrayList<>()).add(emitter);
+        Runnable cleanup = () -> remove(username, emitter);
+        emitter.onCompletion(cleanup);
+        emitter.onTimeout(cleanup);
+        emitter.onError(error -> cleanup.run());
         try {
-            emitter.send(SseEmitter.event()
-                    .data("{\"type\":\"connected\",\"message\":\"Connected to product updates stream\"}"));
-        } catch (IOException e) {
-            emitter.completeWithError(e);
+            emitter.send(SseEmitter.event().name("connected").data(Map.of("type", "connected")));
+        } catch (IOException error) {
+            emitter.completeWithError(error);
         }
-        
         return emitter;
     }
 
-    /**
-     * Method to broadcast product updates to all connected clients
-     * Call this when a product is created or updated
-     */
-    public void broadcastProductUpdate(Product product) {
-        log.info("Broadcasting product update to {} subscribers: {}", emitters.size(), product.getName());
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        
-        emitters.forEach(emitter -> {
+    /** Sends only to the authenticated actor that initiated the compatible v1 write. */
+    public void sendProductUpdateToUser(Product product, String username) {
+        List<SseEmitter> emitters = emittersByUser.getOrDefault(username, List.of());
+        for (SseEmitter emitter : List.copyOf(emitters)) {
             try {
-                // Send as unnamed event to trigger onmessage handler
-                emitter.send(SseEmitter.event()
-                        .data(objectMapper.writeValueAsString(product)));
-            } catch (IOException e) {
-                deadEmitters.add(emitter);
+                emitter.send(SseEmitter.event().name("product-updated").data(Map.of(
+                    "productId", product.getId(),
+                    "type", "PRODUCT_UPDATED"
+                )));
+            } catch (IOException error) {
+                remove(username, emitter);
             }
-        });
-        
-        // Remove dead emitters
-        emitters.removeAll(deadEmitters);
+        }
     }
 
-    /**
-     * Send heartbeat to keep connections alive
-     */
-    private void sendHeartbeat() {
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        
-        emitters.forEach(emitter -> {
-            try {
-                emitter.send(SseEmitter.event()
-                        .comment("heartbeat"));
-            } catch (IOException e) {
-                deadEmitters.add(emitter);
-            }
-        });
-        
-        emitters.removeAll(deadEmitters);
+    private void remove(String username, SseEmitter emitter) {
+        List<SseEmitter> emitters = emittersByUser.get(username);
+        if (emitters != null) {
+            emitters.remove(emitter);
+            if (emitters.isEmpty()) emittersByUser.remove(username);
+        }
+        log.debug("Closed product stream for {}", username);
     }
 }

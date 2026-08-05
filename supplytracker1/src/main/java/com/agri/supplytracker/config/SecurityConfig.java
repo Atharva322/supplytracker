@@ -4,6 +4,7 @@ import com.agri.supplytracker.security.JwtAuthenticationFilter;
 import com.agri.supplytracker.security.CustomUserDetailsService;
 import com.agri.supplytracker.security.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +29,9 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${cors.allowed.origins:http://localhost:5173,http://localhost:5174,http://localhost:3000}")
+    private String allowedOrigins;
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
@@ -63,25 +67,19 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/**", 
+                    "/api/auth/login",
+                    "/api/auth/register",
                     "/auth/**", 
-                    "/api/products/**", 
-                    "/api/farms/**",
                     "/oauth2/**", 
                     "/login/oauth2/**",
                     "/login/oauth2/code/**",
                     "/login/oauth2/code/google",
-                    "/graphql", 
-                    "/graphql/**",
-                    "/graphiql", 
-                    "/graphiql/**",
-                    "/actuator/**",
+                    "/ws/notifications/**",
+                    "/actuator/health",
+                    "/actuator/info",
                     "/vendor/**", 
                     "/assets/**", 
-                    "/favicon.ico", 
-                    "/ws/**", 
-                    "/api/detection/**",
-                    "/api/notifications/**"
+                    "/favicon.ico"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -118,14 +116,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000",
-            "http://localhost",
-            "http://3.21.103.126:30000",
-            "http://3.21.103.126"
-        ));
+        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(",")).map(String::trim).filter(s -> !s.isBlank()).toList());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

@@ -4,6 +4,8 @@
 A full-stack agricultural supply chain management system with integrated AI object detection built with Spring Boot, React, MongoDB, and YOLOv3. Automate fruit quality assessment, track products from farm to distribution with role-based access control, and leverage machine learning for real-time quality inspection.
 
 > **Project status:** See [IMPLEMENTED_VS_PLANNED.md](IMPLEMENTED_VS_PLANNED.md) for the verified capability inventory, roadmap boundary, and measurements that still require reproducible benchmarks.
+>
+> **Phase 1–4 branch:** See [docs/PHASES_1_4_IMPLEMENTATION.md](docs/PHASES_1_4_IMPLEMENTATION.md) for the security, organization, batch ledger, custody, shipment, cold-chain APIs, test gates, and known blockers. The v2 model is additive and does not delete legacy product data.
 
 ## 📋 Table of Contents
 

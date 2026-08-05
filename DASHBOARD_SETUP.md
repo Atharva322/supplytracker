@@ -19,7 +19,7 @@ Start-Process http://localhost:9090/alerts
 
 ### 2. Import Grafana Dashboard
 
-1. **Open Grafana**: http://localhost:3000 (admin/admin123)
+1. **Open Grafana**: http://localhost:3000 (use the configured Grafana admin credentials)
 
 2. **Import Dashboard**:
    - Click the `+` icon in the left sidebar

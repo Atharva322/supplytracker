@@ -344,7 +344,7 @@ kubectl get services -n supplytracker
 |----------|-------------|---------|
 | `REDIS_HOST` | Redis hostname | `localhost` |
 | `CORS_ORIGINS` | Allowed origins | `http://localhost` |
-| `GRAFANA_ADMIN_PASSWORD` | Grafana password | `admin123` |
+| `GRAFANA_ADMIN_PASSWORD` | Grafana password | Required secret; no default |
 
 ### Setting Environment Variables
 

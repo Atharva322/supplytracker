@@ -110,7 +110,7 @@ Write-Host "🌐 Access your application:" -ForegroundColor Cyan
 Write-Host "   Frontend:   http://localhost" -ForegroundColor White
 Write-Host "   Backend:    http://localhost:8080" -ForegroundColor White
 Write-Host "   YOLOv3:     http://localhost:8000" -ForegroundColor White
-Write-Host "   Grafana:    http://localhost:3000 (admin/admin123)" -ForegroundColor White
+Write-Host "   Grafana:    http://localhost:3000 (credentials from environment)" -ForegroundColor White
 Write-Host "   Prometheus: http://localhost:9090" -ForegroundColor White
 Write-Host ""
 Write-Host "📋 View logs: .\deploy.ps1 -Logs" -ForegroundColor Yellow

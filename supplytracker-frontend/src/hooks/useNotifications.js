@@ -4,7 +4,8 @@ import { apiClient } from '../api';
 let stompClient = null;
 let isConnected = false;
 
-const WS_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const WS_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 
 const useNotifications = (userId, token) => {
@@ -97,13 +98,13 @@ const useNotifications = (userId, token) => {
       stompClient = window.Stomp.over(socket);
 
       stompClient.connect(
-        { username: userId, token: token },
+        { Authorization: `Bearer ${token}` },
         (frame) => {
           console.log('✅ Connected to WebSocket:', frame);
           isConnected = true;
 
           // Subscribe to personal notification queue
-          stompClient.subscribe(`/user/${userId}/queue/notifications`, (msg) => {
+          stompClient.subscribe('/user/queue/notifications', (msg) => {
             const notification = JSON.parse(msg.body);
             console.log('📬 New notification via WebSocket:', notification);
             

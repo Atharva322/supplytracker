@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,16 +23,20 @@ public class Product {
     private String name;
     
     @NotBlank(message = "Product type is required")
+    @Indexed
     private String type;
     
     @NotBlank(message = "Batch ID is required")
+    @Indexed
     private String batchId;
     
     @NotBlank(message = "Harvest date is required")
     @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "Harvest date must be in YYYY-MM-DD format")
+    @Indexed
     private String harvestDate;
     
     @NotBlank(message = "Origin farm ID is required")
+    @Indexed
     private String originFarmId;
     
     // Origin farm name (denormalized for quick access)
@@ -44,6 +49,7 @@ public class Product {
     private String destination;
     
     // Current status: IN_TRANSIT, AT_FARM, PROCESSING, IN_WAREHOUSE, DELIVERED, etc.
+    @Indexed
     private String status;
     
     @Builder.Default

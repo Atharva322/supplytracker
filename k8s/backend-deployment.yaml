@@ -20,7 +20,7 @@ spec:
         - containerPort: 8080
         env:
         - name: SPRING_DATA_MONGODB_URI
-          value: "mongodb://mongodb:27017/agriproj"
+          value: "mongodb://mongodb:27017/agriproj?replicaSet=rs0&directConnection=true"
         - name: SPRING_DATA_REDIS_HOST
           value: "redis"
         - name: SPRING_DATA_REDIS_PORT

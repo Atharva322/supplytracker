@@ -4,6 +4,7 @@ import com.agri.supplytracker.model.Notification;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NotificationRepository extends MongoRepository<Notification, String> {
@@ -12,4 +13,5 @@ public interface NotificationRepository extends MongoRepository<Notification, St
     List<Notification> findByRecipientId(String recipientId);
     List<Notification> findByRecipientIdAndReadFalse(String recipientId);
     long countByRecipientIdAndReadFalse(String recipientId);
+    Optional<Notification> findByIdAndRecipientId(String id, String recipientId);
 }

@@ -66,6 +66,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate local stack
+        env:
+          GRAFANA_ADMIN_PASSWORD: ci-only-grafana-password
         run: docker compose -f docker-compose.yml config --quiet
       - name: Validate production stack
         env:

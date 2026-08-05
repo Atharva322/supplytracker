@@ -94,7 +94,7 @@ start_services() {
     echo "   Frontend:   http://localhost"
     echo "   Backend:    http://localhost:8080"
     echo "   YOLOv3:     http://localhost:8000"
-    echo "   Grafana:    http://localhost:3000 (admin/admin123)"
+    echo "   Grafana:    http://localhost:3000 (credentials from environment)"
     echo "   Prometheus: http://localhost:9090"
     echo ""
 }

@@ -46,14 +46,11 @@ spec:
     spec:
       containers:
       - name: mongodb
-        image: mongo:6.0
+        image: mongo:7.0
+        args: ["--replSet", "rs0", "--bind_ip_all"]
         ports:
         - containerPort: 27017
         env:
-        - name: MONGO_INITDB_ROOT_USERNAME
-          value: "admin"
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          value: "changeme123"
         - name: MONGO_INITDB_DATABASE
           value: "supplytracker"
         volumeMounts:
@@ -66,6 +63,14 @@ spec:
           limits:
             memory: "384Mi"
             cpu: "300m"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]}).ok }' | grep 1"
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
       - name: mongodb-storage
         persistentVolumeClaim:
@@ -143,11 +148,14 @@ spec:
         - containerPort: 8080
         env:
         - name: SPRING_DATA_MONGODB_URI
-          value: "mongodb://admin:changeme123@mongodb:27017/supplytracker?authSource=admin"
+          value: "mongodb://mongodb:27017/supplytracker?replicaSet=rs0&directConnection=true"
         - name: SPRING_DATA_REDIS_HOST
           value: "redis"
         - name: JWT_SECRET
-          value: "change-this-to-secure-secret"
+          valueFrom:
+            secretKeyRef:
+              name: supplytracker-secrets
+              key: JWT_SECRET
         - name: YOLO_SERVICE_URL
           value: "http://yolov3:8000"
         resources:

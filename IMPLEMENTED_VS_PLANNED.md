@@ -32,6 +32,16 @@ This file prevents roadmap items and unverified measurements from being presente
 - QR public traceability and bounded offline/PWA workflows.
 - OpenTelemetry traces, SLOs, load/failure testing, and reproducible performance reports.
 
+## Implemented on `agent/phases-1-4-supply-chain` (pending Java 21 CI before merge)
+
+- Security hardening for registration, JWT configuration, business routes, notification ownership, product SSE, STOMP authentication, and bootstrap credentials.
+- V1 product application/query services with bounded pagination, sort allowlisting, Mongo-backed search, and GraphQL delegation.
+- Organization/facility/membership tenant model and `/api/v2` authorization boundary.
+- Versioned ProductBatch projection, typed state machine, append-only trace ledger, idempotency records, transactional outbox, and legacy migration dry-run/write workflow.
+- Custody transfer, quality-gated shipment dispatch/receipt, sensor ingestion, cold-chain excursion incidents, trace events, and organization-scoped notifications.
+
+See `docs/PHASES_1_4_IMPLEMENTATION.md` for APIs, verification gates, and blockers.
+
 ## Measurements that require re-verification
 
 Do not use the existing README claims for model accuracy, sub-200 ms inference, GraphQL performance improvement, 99.9% availability, cost savings, image throughput, or concurrent-user capacity on a resume until a reproducible benchmark/evaluation report is committed.

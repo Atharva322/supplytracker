@@ -19,13 +19,13 @@ public class UserGraphQLController {
     }
 
     @QueryMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<User> users() {
         return userRepository.findAll();
     }
 
     @QueryMapping
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public User user(@Argument String id) {
         return userRepository.findById(id).orElse(null);
     }

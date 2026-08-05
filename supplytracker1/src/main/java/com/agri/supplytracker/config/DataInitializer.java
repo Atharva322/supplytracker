@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Set;
 
@@ -22,13 +23,30 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Value("${app.bootstrap-admin.enabled:false}")
+    private boolean bootstrapAdminEnabled;
+
+    @Value("${app.bootstrap-admin.username:admin}")
+    private String bootstrapAdminUsername;
+
+    @Value("${app.bootstrap-admin.email:admin@supplytracker.local}")
+    private String bootstrapAdminEmail;
+
+    @Value("${app.bootstrap-admin.password:}")
+    private String bootstrapAdminPassword;
+
     @Override
     public void run(String... args) {
-        createAdminIfAbsent();
+        if (bootstrapAdminEnabled) {
+            if (bootstrapAdminPassword == null || bootstrapAdminPassword.length() < 12) {
+                throw new IllegalStateException("BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters when admin bootstrap is enabled");
+            }
+            createAdminIfAbsent();
+        }
     }
 
     private void createAdminIfAbsent() {
-        userRepository.findByUsername("admin").ifPresentOrElse(existing -> {
+        userRepository.findByUsername(bootstrapAdminUsername).ifPresentOrElse(existing -> {
             if (!existing.getRoles().contains("ROLE_ADMIN")) {
                 existing.getRoles().addAll(Set.of("ROLE_ADMIN", "ROLE_USER"));
                 existing.setStageProfile("ADMIN");
@@ -40,14 +58,14 @@ public class DataInitializer implements CommandLineRunner {
             }
         }, () -> {
             User admin = new User();
-            admin.setUsername("admin");
-            admin.setEmail("admin@supplytracker.local");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setUsername(bootstrapAdminUsername);
+            admin.setEmail(bootstrapAdminEmail);
+            admin.setPassword(passwordEncoder.encode(bootstrapAdminPassword));
             admin.setRoles(Set.of("ROLE_ADMIN", "ROLE_USER"));
             admin.setStageProfile("ADMIN");
             admin.setLocation("HQ");
             userRepository.save(admin);
-            logger.info("✅ Permanent admin user created: username=admin");
+            logger.info("Bootstrap admin user created: username={}", bootstrapAdminUsername);
         });
     }
 }

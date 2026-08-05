@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -21,7 +22,6 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
 public class AuthController {
 
     @Autowired
@@ -66,7 +66,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         // Check if username exists
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             return ResponseEntity.badRequest().body(new AuthResponse(null, null, null, "Username already exists"));
@@ -83,13 +83,9 @@ public class AuthController {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         
-        // Set roles - default to ROLE_USER unless specified
-        Set<String> roles = new HashSet<>();
-        if (registerRequest.getRoles() != null && !registerRequest.getRoles().isEmpty()) {
-            roles.addAll(registerRequest.getRoles());
-        } else {
-            roles.add("ROLE_USER");
-        }
+        // Public registration is deliberately low privilege. Elevated roles are
+        // assigned only by authenticated administrative/membership workflows.
+        Set<String> roles = Set.of("ROLE_USER");
         user.setRoles(roles);
 
         userRepository.save(user);

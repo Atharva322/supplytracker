@@ -9,6 +9,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Collection;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class NotificationService {
@@ -25,9 +28,7 @@ public class NotificationService {
     public void notifyAdmins(String type, String title, String message, String productId, 
                             String productName, String triggeredBy, String triggeredByUser) {
         
-        List<User> admins = userRepository.findAll().stream()
-            .filter(u -> u.getRoles() != null && u.getRoles().contains("ROLE_ADMIN"))
-            .toList();
+        List<User> admins = userRepository.findByRole("ROLE_ADMIN");
 
         for (User admin : admins) {
             Notification notification = new Notification();
@@ -51,6 +52,23 @@ public class NotificationService {
         }
     }
 
+    public void notifyUsers(Collection<String> usernames, String type, String title, String message, String resourceId) {
+        usernames.stream().distinct().forEach(username -> {
+            Notification notification = new Notification();
+            notification.setRecipientId(username); notification.setType(type); notification.setTitle(title);
+            notification.setMessage(message); notification.setProductId(resourceId); notification.setCreatedAt(LocalDateTime.now());
+            Notification saved = notificationRepository.save(notification);
+            Runnable deliver = () -> messagingTemplate.convertAndSendToUser(username, "/queue/notifications", saved);
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override public void afterCommit() { deliver.run(); }
+                });
+            } else {
+                deliver.run();
+            }
+        });
+    }
+
     public List<Notification> getNotifications(String userId) {
         return notificationRepository.findByRecipientId(userId);
     }
@@ -59,8 +77,8 @@ public class NotificationService {
         return notificationRepository.countByRecipientIdAndReadFalse(userId);
     }
 
-    public Notification markAsRead(String notificationId) {
-        Notification notification = notificationRepository.findById(notificationId).orElse(null);
+    public Notification markAsRead(String notificationId, String userId) {
+        Notification notification = notificationRepository.findByIdAndRecipientId(notificationId, userId).orElse(null);
         if (notification != null) {
             notification.setRead(true);
             return notificationRepository.save(notification);
@@ -76,7 +94,12 @@ public class NotificationService {
         });
     }
 
-    public void deleteNotification(String notificationId) {
-        notificationRepository.deleteById(notificationId);
+    public boolean deleteNotification(String notificationId, String userId) {
+        return notificationRepository.findByIdAndRecipientId(notificationId, userId)
+            .map(notification -> {
+                notificationRepository.delete(notification);
+                return true;
+            })
+            .orElse(false);
     }
 }

@@ -27,4 +27,8 @@ test('authentication schemas preserve current input requirements', () => {
     registerSchema.safeParse({ username: 'user123', email: 'bad-email', password: 'Secret1' }).success,
     false,
   );
+  assert.equal(
+    registerSchema.safeParse({ username: 'user123', email: 'user@example.com', password: 'Short1' }).success,
+    false,
+  );
 });

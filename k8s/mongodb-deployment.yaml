@@ -28,6 +28,7 @@ spec:
       containers:
       - name: mongodb
         image: mongo:7.0
+        args: ["--replSet", "rs0", "--bind_ip_all"]
         ports:
         - containerPort: 27017
         env:
@@ -51,6 +52,14 @@ spec:
             - "db.adminCommand('ping')"
           initialDelaySeconds: 30
           periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]}).ok }' | grep 1"
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
       - name: mongodb-storage
         persistentVolumeClaim:

@@ -40,17 +40,6 @@ type Mutation {
     updateProductStatus(id: ID!, status: String!, location: String): Product!
 }
 
-type Subscription {
-    # Subscribe to product updates
-    productUpdated: Product!
-    
-    # Subscribe to new products
-    productCreated: Product!
-    
-    # Subscribe to product status changes
-    productStatusChanged(productId: ID): ProductStatusUpdate!
-}
-
 # Product Type
 type Product {
     id: ID!
@@ -103,13 +92,4 @@ input TrackingStageInput {
     timestamp: String
     notes: String
     handler: String!
-}
-
-# Subscription Types
-type ProductStatusUpdate {
-    productId: ID!
-    oldStatus: String
-    newStatus: String!
-    location: String
-    timestamp: String!
 }

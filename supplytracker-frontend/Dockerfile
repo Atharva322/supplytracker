@@ -13,7 +13,7 @@ RUN npm ci --only=production=false
 COPY . .
 
 # Build application
-ARG VITE_API_URL=http://3.21.103.126:30080
+ARG VITE_API_URL=http://localhost:8080/api
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

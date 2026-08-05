@@ -52,7 +52,7 @@ This setup adds Redis caching for improved performance and Grafana with Promethe
 - **Port**: 3000
 - **Default Login**: 
   - Username: `admin`
-  - Password: `admin123`
+  - Password: value supplied through `GRAFANA_ADMIN_PASSWORD`
 - **Features**:
   - Real-time dashboards
   - Alerting
@@ -107,7 +107,7 @@ mvn clean package -DskipTests
 # Run with environment variables
 $env:GOOGLE_CLIENT_ID='your-google-client-id'
 $env:GOOGLE_CLIENT_SECRET='your-google-client-secret'
-$env:JWT_SECRET='mySecretKeyForJWTTokenGenerationAndValidation12345'
+$env:JWT_SECRET='<generate-a-random-32+-character-value>'
 java -jar target\supplytracker-1.0-SNAPSHOT.jar
 ```
 
@@ -131,7 +131,7 @@ java -jar target\supplytracker-1.0-SNAPSHOT.jar
 4. **Grafana Dashboard**
    ```
    http://localhost:3000
-   Login: admin / admin123
+   Login: admin / the `GRAFANA_ADMIN_PASSWORD` value
    ```
 
 ## Redis Cache Usage
@@ -167,7 +167,7 @@ public Product createProduct(Product product) { ... }
 ### Creating Your First Dashboard
 
 1. Open Grafana: http://localhost:3000
-2. Login with admin/admin123
+2. Login with the configured Grafana admin credentials
 3. Click "+ Create Dashboard"
 4. Add Panel
 
