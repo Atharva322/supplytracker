@@ -41,6 +41,6 @@ aws-credentials.txt
 # Maven build output
 supplytracker1/target/
 supplytracker1/logs/
-yolov3-service/__pycache__/
+**/__pycache__/
 
 supplytracker1/target_bak/

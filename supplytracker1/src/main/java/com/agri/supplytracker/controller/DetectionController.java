@@ -22,7 +22,7 @@ import java.util.*;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
 public class DetectionController {
 
-    @Value("${yolo.service.url:http://localhost:5000}")
+    @Value("${yolo.service.url:http://localhost:8000}")
     private String yoloServiceUrl;
 
     private final RestTemplate restTemplate;

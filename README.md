@@ -3,6 +3,8 @@
 
 A full-stack agricultural supply chain management system with integrated AI object detection built with Spring Boot, React, MongoDB, and YOLOv3. Automate fruit quality assessment, track products from farm to distribution with role-based access control, and leverage machine learning for real-time quality inspection.
 
+> **Project status:** See [IMPLEMENTED_VS_PLANNED.md](IMPLEMENTED_VS_PLANNED.md) for the verified capability inventory, roadmap boundary, and measurements that still require reproducible benchmarks.
+
 ## 📋 Table of Contents
 
 - [Features](#features)
@@ -19,11 +21,11 @@ A full-stack agricultural supply chain management system with integrated AI obje
 ## ✨ Features
 
 ### 🤖 AI Object Detection & Quality Assessment
-- **YOLOv3 Custom Model** - Real-time fruit quality detection with 85%+ accuracy
+- **YOLOv3 Custom Model** - Real-time fruit quality detection; accuracy is being re-baselined with a reproducible evaluation set
 - **Automated Quality Inspection** - Classify fruits as GOOD/BAD across 6 product classes
 - **AI-Powered Descriptions** - Generate quality reports using AWS Bedrock
-- **Real-time Processing** - Sub-200ms inference latency for instant results
-- **Batch Processing** - Handle 500+ images daily with microservice architecture
+- **Real-time Processing** - Synchronous inference endpoint with latency benchmarking planned
+- **Batch Processing** - Multi-image inference endpoint; production throughput benchmarking is planned
 
 ### 🔐 Authentication & Authorization
 - **JWT-based Authentication** - Secure login/register system
@@ -135,7 +137,7 @@ server.port=8080
 jwt.secret=YOUR_JWT_SECRET_HERE
 
 # YOLO Service
-yolo.service.url=http://localhost:5000
+yolo.service.url=http://localhost:8000
 
 # MongoDB
 spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
@@ -208,10 +210,10 @@ mongod
 
 ```bash
 cd yolov3-service
-uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The ML service will start on **http://localhost:5000**
+The ML service will start on **http://localhost:8000**
 
 ### Step 3: Start Backend Server
 
@@ -371,9 +373,9 @@ file: [image file]
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `http://localhost:5000/detect` | YOLO object detection |
-| POST | `http://localhost:5000/quality-check` | Quality assessment |
-| GET | `http://localhost:5000/health` | Service health check |
+| POST | `http://localhost:8000/detect` | YOLO object detection |
+| POST | `http://localhost:8000/quality-check` | Quality assessment |
+| GET | `http://localhost:8000/health` | Service health check |
 
 ### Query Parameters
 
@@ -507,7 +509,7 @@ supplytracker/
 ### Python ML Service Issues
 ```bash
 # Check if service is running
-curl http://localhost:5000/health
+curl http://localhost:8000/health
 
 # Requirements installation error
 pip install --upgrade pip
@@ -517,14 +519,14 @@ pip install -r requirements.txt
 # Ensure yolov3.weights is in yolov3-service/models/
 
 # Port already in use
-# Change port in app.py or kill process on port 5000
+# Change port in app.py or kill process on port 8000
 ```
 
 ### Backend Won't Start
 - Check if MongoDB is running: `mongosh` or `mongo`
 - Verify environment variables in application.properties
 - Check if port 8080 is available: `netstat -ano | findstr :8080`
-- Ensure Python ML service is running on port 5000
+- Ensure Python ML service is running on port 8000
 - Check logs in `logs/supplytracker.log`
 
 ### Frontend Build Issues
@@ -567,7 +569,7 @@ server.port=8080
 jwt.secret=YOUR_JWT_SECRET_HERE_MINIMUM_32_CHARACTERS
 
 # YOLO Service
-yolo.service.url=http://localhost:5000
+yolo.service.url=http://localhost:8000
 
 # MongoDB
 spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
@@ -602,7 +604,9 @@ logging.level.com.agri.supplytracker=DEBUG
 logging.file.name=logs/supplytracker.log
 ```
 
-## 📊 Performance Metrics
+## 📊 Historical Performance Claims (Re-verification Required)
+
+The values below were present in the original project documentation but do not yet have committed benchmark/evaluation artifacts. They must not be treated as verified production or resume metrics until the Phase 12 evidence work reproduces them.
 
 - **ML Inference Latency**: Sub-200ms average response time
 - **Model Accuracy**: 85%+ mAP on validation set (6 classes)
@@ -623,7 +627,7 @@ logging.file.name=logs/supplytracker.log
 2. **Start Python ML Service** (Terminal 1)
    ```bash
    cd yolov3-service
-   uvicorn app:app --port 5000 --reload
+   uvicorn app:app --port 8000 --reload
    ```
 
 3. **Start Spring Boot Backend** (Terminal 2)

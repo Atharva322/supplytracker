@@ -74,7 +74,7 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - YOLO_SERVICE_URL=http://yolov3-service:8000
-      - JWT_SECRET=${JWT_SECRET:-mySecretKeyForJWTTokenGenerationAndValidation12345}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     networks:
@@ -143,7 +143,7 @@ services:
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=${GRAFANA_URL:-http://localhost:3000}
     networks:

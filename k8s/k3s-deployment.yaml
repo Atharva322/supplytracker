@@ -148,8 +148,8 @@ spec:
           value: "redis"
         - name: JWT_SECRET
           value: "change-this-to-secure-secret"
-        - name: YOLOV3_SERVICE_URL
-          value: "http://yolov3:5000"
+        - name: YOLO_SERVICE_URL
+          value: "http://yolov3:8000"
         resources:
           requests:
             memory: "384Mi"
@@ -191,7 +191,7 @@ spec:
       - name: yolov3
         image: atharvadocks3/supplytracker-yolov3:latest
         ports:
-        - containerPort: 5000
+        - containerPort: 8000
         resources:
           requests:
             memory: "512Mi"
@@ -210,8 +210,8 @@ spec:
   selector:
     app: yolov3
   ports:
-  - port: 5000
-    targetPort: 5000
+  - port: 8000
+    targetPort: 8000
     nodePort: 30050
 ---
 apiVersion: apps/v1

@@ -147,7 +147,6 @@ subscription OnStatusChange {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('query');
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [subscriptionMessages, setSubscriptionMessages] = useState([]);
 
   const executeGraphQL = async (graphqlQuery) => {
     setLoading(true);
@@ -185,14 +184,12 @@ subscription OnStatusChange {
         eventSourceRef.current = null;
       }
       setIsSubscribed(false);
-      setSubscriptionMessages([]);
       setResult('Subscription stopped.');
       return;
     }
 
     // Subscribe using Server-Sent Events (SSE)
     setLoading(true);
-    setSubscriptionMessages([]);
     setResult('Connecting to SSE stream...\n');
 
     try {
@@ -214,7 +211,6 @@ subscription OnStatusChange {
             timestamp: new Date().toLocaleTimeString(),
             data: data
           };
-          setSubscriptionMessages(prev => [...prev, message]);
           setResult(prevResult => 
             prevResult + `\n[${message.timestamp}] ${JSON.stringify(data, null, 2)}\n`
           );

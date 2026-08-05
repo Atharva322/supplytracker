@@ -7,9 +7,9 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code and build
+# Copy source code, run tests, and build
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean verify
 
 # Production stage
 FROM eclipse-temurin:21-jre-alpine

@@ -6,7 +6,7 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -32,7 +32,7 @@ class ErrorBoundary extends Component {
                 We're sorry for the inconvenience. An unexpected error has occurred.
               </p>
               
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {import.meta.env.DEV && this.state.error && (
                 <details className="text-left bg-red-50 p-4 rounded-lg mb-6 border border-red-200">
                   <summary className="cursor-pointer font-semibold text-red-700 mb-2">
                     Error Details (Development Only)

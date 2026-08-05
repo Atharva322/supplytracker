@@ -154,7 +154,7 @@ const useNotifications = (userId, token) => {
         console.error('Error marking notification as read:', err);
       }
     },
-    [token]
+    []
   );
 
   // Mark all notifications as read
@@ -166,7 +166,7 @@ const useNotifications = (userId, token) => {
     } catch (err) {
       console.error('Error marking all as read:', err);
     }
-  }, [token]);
+  }, []);
 
   // Delete notification
   const deleteNotification = useCallback(
@@ -178,7 +178,7 @@ const useNotifications = (userId, token) => {
         console.error('Error deleting notification:', err);
       }
     },
-    [token]
+    []
   );
 
   // Initialize WebSocket connection and fetch initial data

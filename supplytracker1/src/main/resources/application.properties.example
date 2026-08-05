@@ -2,13 +2,13 @@
 server.port=8080
 
 # JWT Configuration
-jwt.secret=YOUR_JWT_SECRET_HERE_MINIMUM_32_CHARACTERS
+jwt.secret=${JWT_SECRET}
 
 # YOLO Detection Service
-yolo.service.url=http://localhost:5000
+yolo.service.url=${YOLO_SERVICE_URL:http://localhost:8000}
 
 # MongoDB Configuration
-spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
+spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/agriproj}
 
 # GraphQL Configuration
 spring.graphql.graphiql.enabled=true
@@ -17,11 +17,8 @@ spring.graphql.path=/graphql
 spring.graphql.websocket.path=/graphql
 spring.graphql.schema.printer.enabled=true
 
-# Redis Configuration
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.redis.password=
-spring.data.redis.timeout=60000
+# Redis is present in the local infrastructure stack but is not wired into the
+# Spring application yet. Redis integration is deferred to a later platform phase.
 
 # Actuator Configuration
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
@@ -47,8 +44,6 @@ spring.servlet.multipart.max-file-size=50MB
 spring.servlet.multipart.max-request-size=50MB
 
 # AWS Configuration
-aws.accessKeyId=YOUR_AWS_ACCESS_KEY_ID
-aws.secretAccessKey=YOUR_AWS_SECRET_ACCESS_KEY
 aws.region=us-east-2
 aws.s3.bucket=your-s3-bucket-name
 

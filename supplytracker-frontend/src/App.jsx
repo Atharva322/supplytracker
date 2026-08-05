@@ -26,8 +26,6 @@ function App() {
   const [userRoles, setUserRoles] = useState([]);
   const [userStageProfile, setUserStageProfile] = useState("");
   const [userLocation, setUserLocation] = useState("");
-  const [userFarmId, setUserFarmId] = useState("");
-  const [showAuthForm, setShowAuthForm] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
   const [authData, setAuthData] = useState({
     username: "",
@@ -110,7 +108,6 @@ function App() {
       setIsAuthenticated(true);
       setCurrentUser(urlUsername);
       setUserRoles(rolesArray);
-      setShowAuthForm(false);
       setCurrentView("main"); // Go to main app after OAuth login
       
       // Clean URL
@@ -124,15 +121,12 @@ function App() {
     const roles = localStorage.getItem("roles");
     const stageProfile = localStorage.getItem("stageProfile");
     const location = localStorage.getItem("location");
-    const farmId = localStorage.getItem("farmId");
     if (token && username) {
       setIsAuthenticated(true);
       setCurrentUser(username);
       setUserRoles(roles ? JSON.parse(roles) : []);
       setUserStageProfile(stageProfile || "");
       setUserLocation(location || "");
-      setUserFarmId(farmId || "");
-      setShowAuthForm(false);
       setCurrentView("main"); // Go to main app if authenticated
     }
   }, []);
@@ -143,6 +137,8 @@ function App() {
       fetchDashboardStats();
       fetchFarms();
     }
+    // These bootstrap fetchers intentionally run only when authentication changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const fetchDashboardStats = async () => {
@@ -194,8 +190,6 @@ function App() {
         setUserRoles(response.roles || []);
         setUserStageProfile(response.stageProfile || "");
         setUserLocation(response.location || "");
-        setUserFarmId(response.associatedFarmId || "");
-        setShowAuthForm(false);
         setCurrentView("main"); // Go to main app after login
         setError("");
       } else {
@@ -225,8 +219,6 @@ function App() {
     setUserRoles([]);
     setUserStageProfile("");
     setUserLocation("");
-    setUserFarmId("");
-    setShowAuthForm(true);
     setProducts([]);
     setCurrentView("homepage");
   };
@@ -1736,4 +1728,3 @@ function App() {
 }
 
 export default App;
-

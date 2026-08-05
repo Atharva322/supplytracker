@@ -9,7 +9,7 @@ import "./index.css";
 const App = lazy(() => import("./App.jsx"));
 
 // Loading fallback component
-const LoadingFallback = () => (
+const loadingFallback = (
   <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-lime-50 flex items-center justify-center">
     <div className="text-center">
       <div className="animate-spin text-6xl mb-4">🌾</div>
@@ -23,7 +23,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={loadingFallback}>
           <App />
         </Suspense>
       </QueryClientProvider>
