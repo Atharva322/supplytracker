@@ -14,7 +14,7 @@ app.bootstrap-admin.password=${BOOTSTRAP_ADMIN_PASSWORD:}
 yolo.service.url=${YOLO_SERVICE_URL:http://localhost:8000}
 
 # MongoDB Configuration
-spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/agriproj?replicaSet=rs0&directConnection=true}
+spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27018/agriproj?directConnection=true}
 spring.data.mongodb.auto-index-creation=true
 
 # GraphQL Configuration

@@ -101,7 +101,7 @@ Before running this project, make sure you have:
 - **Maven 3.9+**
 - **Node.js 18+** and npm
 - **Python 3.10+** with pip
-- **MongoDB 4.4+** (running on `localhost:27017`)
+- **MongoDB 4.4+** (running on `localhost:27018` when using the provided local Compose stack)
 - **Redis 6.0+** (optional - for caching)
 - **AWS Account** with S3 and Bedrock access
 - **Google Cloud Console Account** (for OAuth2 - optional)
@@ -118,7 +118,7 @@ cd supplytracker
 ### 2. Backend Setup (Spring Boot)
 
 #### Configure MongoDB
-Make sure MongoDB is running on `localhost:27017`. The application will automatically create the `agriproj` database.
+Make sure MongoDB is running on `localhost:27018` when using the provided local Compose stack. The application will automatically create the `agriproj` database.
 
 #### Configure application.properties
 
@@ -142,7 +142,7 @@ jwt.secret=YOUR_JWT_SECRET_HERE
 yolo.service.url=http://localhost:8000
 
 # MongoDB
-spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
+spring.data.mongodb.uri=mongodb://localhost:27018/agriproj?directConnection=true
 
 # AWS Configuration
 aws.accessKeyId=YOUR_AWS_ACCESS_KEY
@@ -574,7 +574,7 @@ jwt.secret=YOUR_JWT_SECRET_HERE_MINIMUM_32_CHARACTERS
 yolo.service.url=http://localhost:8000
 
 # MongoDB
-spring.data.mongodb.uri=mongodb://localhost:27017/agriproj
+spring.data.mongodb.uri=mongodb://localhost:27018/agriproj?directConnection=true
 
 # Redis
 spring.data.redis.host=localhost

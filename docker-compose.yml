@@ -6,14 +6,15 @@ services:
     image: mongo:7.0
     container_name: supplytracker-mongodb
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
       - MONGO_INITDB_DATABASE=agriproj
+      - MONGO_REPLICA_HOST=localhost:27018
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]}).ok }' | grep 1"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:process.env.MONGO_REPLICA_HOST}]}).ok }' | grep 1"]
       interval: 10s
       timeout: 5s
       retries: 10

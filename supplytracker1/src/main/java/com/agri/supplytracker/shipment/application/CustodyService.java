@@ -4,6 +4,7 @@ import com.agri.supplytracker.catalog.application.BatchService;
 import com.agri.supplytracker.catalog.domain.ProductBatch;
 import com.agri.supplytracker.organization.persistence.OrganizationRepository;
 import com.agri.supplytracker.platform.domain.IdempotencyRecord;
+import com.agri.supplytracker.platform.domain.IdempotencySupport;
 import com.agri.supplytracker.platform.persistence.IdempotencyRecordRepository;
 import com.agri.supplytracker.platform.security.AuthorizationService;
 import com.agri.supplytracker.shipment.domain.CustodyTransfer;
@@ -32,8 +33,9 @@ public class CustodyService {
     @Transactional
     public CustodyTransfer offer(String batchId, String recipientOrganizationId, BigDecimal quantity, String unit, String actor, String key) {
         requireKey(key);
+        String requestHash = IdempotencySupport.hash("custody.offer", batchId, recipientOrganizationId, quantity, unit);
         Optional<IdempotencyRecord> replay = idempotency.findByActorAndKey(actor, key);
-        if (replay.isPresent()) { CustodyTransfer previous=replay("CUSTODY", replay.get()); authorization.requireMember(previous.getSenderOrganizationId(),actor); return previous; }
+        if (replay.isPresent()) { IdempotencySupport.requireSameRequest(replay.get(), requestHash); CustodyTransfer previous=replay("CUSTODY", replay.get()); authorization.requireMember(previous.getSenderOrganizationId(),actor); return previous; }
         ProductBatch batch = batches.get(batchId, actor);
         String sender = batch.getCustodianOrganizationId();
         authorization.requireMember(sender, actor);
@@ -47,15 +49,16 @@ public class CustodyService {
             .offeredBy(actor).offeredAt(Instant.now()).build());
         batch.setActiveCustodyTransferId(transfer.getId()); batches.saveProjection(batch);
         batches.appendEvent(batch, TraceEventType.CUSTODY_OFFERED, actor, Map.of("transferId", transfer.getId(), "recipientOrganizationId", recipientOrganizationId));
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("CUSTODY").resourceId(transfer.getId()).createdAt(Instant.now()).build());
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("CUSTODY").resourceId(transfer.getId()).createdAt(Instant.now()).build());
         return transfer;
     }
 
     @Transactional
     public CustodyTransfer accept(String transferId, String actor, String key) {
         requireKey(key);
+        String requestHash = IdempotencySupport.hash("custody.accept", transferId);
         Optional<IdempotencyRecord> replay = idempotency.findByActorAndKey(actor, key);
-        if (replay.isPresent()) { CustodyTransfer previous=replay("CUSTODY", replay.get()); authorization.requireMember(previous.getRecipientOrganizationId(),actor); return previous; }
+        if (replay.isPresent()) { IdempotencySupport.requireSameRequest(replay.get(), requestHash); CustodyTransfer previous=replay("CUSTODY", replay.get()); authorization.requireMember(previous.getRecipientOrganizationId(),actor); return previous; }
         CustodyTransfer transfer = get(transferId);
         authorization.requireMember(transfer.getRecipientOrganizationId(), actor);
         if (transfer.getStatus() != CustodyTransfer.Status.OFFERED) throw new IllegalStateException("Only offered custody can be accepted");
@@ -66,7 +69,7 @@ public class CustodyService {
         batch.setPendingCustodianOrganizationId(transfer.getRecipientOrganizationId());
         batches.saveProjection(batch);
         batches.appendEvent(batch, TraceEventType.CUSTODY_ACCEPTED, actor, Map.of("transferId", transferId, "recipientOrganizationId", transfer.getRecipientOrganizationId()));
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("CUSTODY").resourceId(saved.getId()).createdAt(Instant.now()).build());
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("CUSTODY").resourceId(saved.getId()).createdAt(Instant.now()).build());
         return saved;
     }
 

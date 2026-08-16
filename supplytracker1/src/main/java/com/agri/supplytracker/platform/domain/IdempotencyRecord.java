@@ -11,6 +11,7 @@ public class IdempotencyRecord {
     @Id private String id;
     private String actor;
     private String key;
+    private String requestHash;
     private String resourceType;
     private String resourceId;
     private Instant createdAt;

@@ -11,12 +11,13 @@ services:
       - mongodb_data:/data/db
     environment:
       - MONGO_INITDB_DATABASE=agriproj
+      - MONGO_REPLICA_HOST=mongodb:27017
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     networks:
       - supplytracker-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]}).ok }' | grep 1"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id:\"rs0\",members:[{_id:0,host:process.env.MONGO_REPLICA_HOST}]}).ok }' | grep 1"]
       interval: 10s
       timeout: 5s
       retries: 5

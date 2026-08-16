@@ -3,6 +3,7 @@ package com.agri.supplytracker.shipment.application;
 import com.agri.supplytracker.catalog.application.BatchService;
 import com.agri.supplytracker.catalog.domain.*;
 import com.agri.supplytracker.platform.domain.IdempotencyRecord;
+import com.agri.supplytracker.platform.domain.IdempotencySupport;
 import com.agri.supplytracker.platform.persistence.IdempotencyRecordRepository;
 import com.agri.supplytracker.platform.security.AuthorizationService;
 import com.agri.supplytracker.organization.application.OrganizationService;
@@ -35,7 +36,7 @@ public class ShipmentService {
 
     @Transactional
     public Shipment create(String transferId, BigDecimal minC, BigDecimal maxC, String actor, String key) {
-        requireKey(key); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()) return replay(replay.get(),actor);
+        requireKey(key); String requestHash=IdempotencySupport.hash("shipment.create",transferId,minC,maxC); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()){IdempotencySupport.requireSameRequest(replay.get(),requestHash); return replay(replay.get(),actor);}
         CustodyTransfer transfer = custody.get(transferId);
         authorization.requireMember(transfer.getSenderOrganizationId(), actor);
         if (transfer.getStatus()!=CustodyTransfer.Status.ACCEPTED) throw new IllegalStateException("Custody must be accepted before shipment creation");
@@ -45,13 +46,13 @@ public class ShipmentService {
         Shipment shipment=shipments.save(Shipment.builder().custodyTransferId(transferId).senderOrganizationId(transfer.getSenderOrganizationId())
             .recipientOrganizationId(transfer.getRecipientOrganizationId()).lines(List.of(ShipmentLine.builder().batchId(transfer.getBatchId()).quantity(transfer.getQuantity()).unit(transfer.getUnit()).build()))
             .minimumTemperatureC(minC).maximumTemperatureC(maxC).status(Shipment.Status.DRAFT).createdAt(Instant.now()).build());
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("SHIPMENT").resourceId(shipment.getId()).createdAt(Instant.now()).build());
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("SHIPMENT").resourceId(shipment.getId()).createdAt(Instant.now()).build());
         return shipment;
     }
 
     @Transactional
     public Shipment dispatch(String shipmentId, String actor, String key) {
-        requireKey(key); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()) return replay(replay.get(),actor);
+        requireKey(key); String requestHash=IdempotencySupport.hash("shipment.dispatch",shipmentId); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()){IdempotencySupport.requireSameRequest(replay.get(),requestHash); return replay(replay.get(),actor);}
         Shipment shipment=getAuthorized(shipmentId, actor); authorization.requireMember(shipment.getSenderOrganizationId(), actor);
         if(shipment.getStatus()!=Shipment.Status.DRAFT) throw new IllegalStateException("Only draft shipments can be dispatched");
         shipment.setStatus(Shipment.Status.IN_TRANSIT); shipment.setDispatchedAt(Instant.now()); Shipment saved=shipments.save(shipment);
@@ -61,7 +62,7 @@ public class ShipmentService {
             batch.setStatus(BatchStatus.IN_TRANSIT); batches.saveProjection(batch);
             batches.appendEvent(batch, TraceEventType.SHIPMENT_DISPATCHED, actor, Map.of("shipmentId", shipmentId));
         }
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("SHIPMENT").resourceId(saved.getId()).createdAt(Instant.now()).build()); return saved;
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("SHIPMENT").resourceId(saved.getId()).createdAt(Instant.now()).build()); return saved;
     }
 
     @Transactional
@@ -95,7 +96,7 @@ public class ShipmentService {
 
     @Transactional
     public Shipment receive(String shipmentId, String actor, String key) {
-        requireKey(key); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()) return replay(replay.get(),actor);
+        requireKey(key); String requestHash=IdempotencySupport.hash("shipment.receive",shipmentId); Optional<IdempotencyRecord> replay=idempotency.findByActorAndKey(actor,key); if(replay.isPresent()){IdempotencySupport.requireSameRequest(replay.get(),requestHash); return replay(replay.get(),actor);}
         Shipment shipment=getAuthorized(shipmentId,actor); authorization.requireMember(shipment.getRecipientOrganizationId(),actor);
         if(shipment.getStatus()!=Shipment.Status.IN_TRANSIT) throw new IllegalStateException("Only in-transit shipments can be received");
         shipment.setStatus(Shipment.Status.DELIVERED); shipment.setReceivedAt(Instant.now()); Shipment saved=shipments.save(shipment);
@@ -108,7 +109,7 @@ public class ShipmentService {
             batch.setActiveCustodyTransferId(null); batches.saveProjection(batch);
             batches.appendEvent(batch, TraceEventType.SHIPMENT_RECEIVED, actor, Map.of("shipmentId",shipmentId));
         }
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("SHIPMENT").resourceId(saved.getId()).createdAt(Instant.now()).build()); return saved;
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("SHIPMENT").resourceId(saved.getId()).createdAt(Instant.now()).build()); return saved;
     }
 
     public Shipment getAuthorized(String id,String actor) { Shipment s=shipments.findById(id).orElseThrow(() -> new NoSuchElementException("Shipment not found"));

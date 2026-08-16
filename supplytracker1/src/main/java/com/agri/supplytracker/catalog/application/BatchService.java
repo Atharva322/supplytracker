@@ -37,8 +37,10 @@ public class BatchService {
                                String actor, String key) {
         authorization.requireMember(organizationId, actor);
         requireKey(key);
+        String requestHash = IdempotencySupport.hash("batch.create", organizationId, batchId, productName, productType, quantity, unit, harvestDate, facilityId);
         Optional<IdempotencyRecord> replay = idempotency.findByActorAndKey(actor, key);
         if (replay.isPresent()) {
+            IdempotencySupport.requireSameRequest(replay.get(), requestHash);
             return replayBatch(replay.get(),actor);
         }
         if (quantity == null || quantity.signum() <= 0) throw new IllegalArgumentException("Quantity must be positive");
@@ -48,7 +50,7 @@ public class BatchService {
             .currentFacilityId(facilityId).custodianOrganizationId(organizationId).status(BatchStatus.HARVESTED)
             .qualityStatus(QualityStatus.PENDING).createdAt(Instant.now()).updatedAt(Instant.now()).build());
         appendEvent(batch, TraceEventType.BATCH_CREATED, actor, Map.of("status", batch.getStatus().name()));
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("BATCH").resourceId(batch.getId()).createdAt(Instant.now()).build());
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("BATCH").resourceId(batch.getId()).createdAt(Instant.now()).build());
         return batch;
     }
 
@@ -76,8 +78,10 @@ public class BatchService {
     @Transactional
     public ProductBatch transition(String batchId, BatchStatus target, Long expectedVersion, String actor, String key) {
         requireKey(key);
+        String requestHash = IdempotencySupport.hash("batch.transition", batchId, target, expectedVersion);
         Optional<IdempotencyRecord> replay = idempotency.findByActorAndKey(actor, key);
         if (replay.isPresent()) {
+            IdempotencySupport.requireSameRequest(replay.get(), requestHash);
             return replayBatch(replay.get(),actor);
         }
         ProductBatch batch = get(batchId, actor);
@@ -91,7 +95,7 @@ public class BatchService {
         batch.setUpdatedAt(Instant.now());
         ProductBatch saved = batches.save(batch);
         appendEvent(saved, TraceEventType.STATUS_CHANGED, actor, Map.of("status", target.name()));
-        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).resourceType("BATCH").resourceId(saved.getId()).createdAt(Instant.now()).build());
+        idempotency.save(IdempotencyRecord.builder().actor(actor).key(key).requestHash(requestHash).resourceType("BATCH").resourceId(saved.getId()).createdAt(Instant.now()).build());
         return saved;
     }
 
