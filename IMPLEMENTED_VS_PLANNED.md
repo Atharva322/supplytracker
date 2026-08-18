@@ -8,9 +8,10 @@ This file prevents roadmap items and unverified measurements from being presente
 - Spring Boot 3.3.6 / Java 21 backend using MongoDB.
 - JWT/password authentication, Google OAuth integration, and method-level role checks on selected mutations.
 - REST product/farm/auth/detection APIs and a GraphQL schema/controller layer.
+- Asynchronous `/api/v2/inspection-jobs` pipeline with upload slots, local object-storage adapter, durable queue messages, retries/backoff, DLQ state, outbox events, versioned inference client, and worker metrics.
 - Product tracking history embedded in product documents.
 - SSE product-update stream and STOMP-based notification components.
-- FastAPI/OpenCV YOLOv3 inference service with detect, batch-detect, quality-check, and health endpoints.
+- FastAPI/OpenCV YOLOv3 inference service with detect, batch-detect, quality-check, health, and versioned contract endpoints.
 - AWS Bedrock description integration with a local fallback description.
 - Prometheus/Grafana/Loki configuration and Docker deployment files.
 
@@ -19,7 +20,7 @@ This file prevents roadmap items and unverified measurements from being presente
 - Redis containers/configuration exist, but the Spring cache currently uses `ConcurrentMapCacheManager`; Redis is not the application cache source of truth.
 - Prometheus/Grafana/Loki assets exist, but production SLOs and end-to-end observability have not been verified.
 - GraphQL subscription types exist in the schema, while the current UI uses SSE for product updates; subscription support must be verified before it is claimed.
-- AWS S3 dependencies/configuration exist, but the current detection request path sends multipart bytes synchronously to FastAPI.
+- AWS S3 dependencies/configuration exist, but the implemented Phase 5 object-storage adapter is local filesystem storage. A cloud S3-compatible adapter remains a deployment extension.
 
 ## Planned architecture
 
@@ -27,7 +28,7 @@ This file prevents roadmap items and unverified measurements from being presente
 - ProductBatch v2 and immutable traceability event ledger.
 - Idempotent commands and transactional outbox messaging.
 - Custody transfers, shipments, cold-chain sensor processing, and incident alerts.
-- Asynchronous, versioned AI inspection jobs with object storage, retries/DLQ, and human review.
+- Human review and model lifecycle workflows for uncertain AI results.
 - Batch split/merge genealogy and targeted recall traversal.
 - QR public traceability and bounded offline/PWA workflows.
 - OpenTelemetry traces, SLOs, load/failure testing, and reproducible performance reports.

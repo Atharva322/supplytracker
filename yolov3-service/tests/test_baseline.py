@@ -31,7 +31,14 @@ class BaselineServiceTests(unittest.TestCase):
         response = asyncio.run(app.root())
         self.assertEqual(response["service"], "YOLOv3 Detection Service")
         self.assertIn("/health", response["endpoints"])
+        self.assertIn("/contract", response["endpoints"])
         self.assertIn("/detect", response["endpoints"])
+
+    def test_contract_exposes_versioned_inference_shape(self):
+        response = asyncio.run(app.contract())
+        self.assertEqual(response["contract_version"], "inspection-inference.v1")
+        self.assertIn("model_version", response)
+        self.assertEqual(response["input"]["field"], "file")
 
 
 if __name__ == "__main__":

@@ -10,6 +10,9 @@ from typing import List, Dict
 import os
 
 app = FastAPI(title="YOLOv3 Detection Service", version="1.0.0")
+CONTRACT_VERSION = "inspection-inference.v1"
+MODEL_VERSION = os.environ.get("YOLO_MODEL_VERSION", "yolov3-local-dev")
+DATASET_VERSION = os.environ.get("YOLO_DATASET_VERSION", "unversioned-local-dev")
 
 # CORS configuration
 app.add_middleware(
@@ -113,7 +116,21 @@ async def root():
         "status": "running",
         "model_loaded": net is not None,
         "version": "1.0.0",
-        "endpoints": ["/health", "/detect", "/quality-check", "/batch-detect"]
+        "endpoints": ["/health", "/contract", "/detect", "/quality-check", "/batch-detect"]
+    }
+
+@app.get("/contract")
+async def contract():
+    return {
+        "contract_version": CONTRACT_VERSION,
+        "model_version": MODEL_VERSION,
+        "dataset_version": DATASET_VERSION,
+        "input": {"content_types": ["image/jpeg", "image/png", "image/webp"], "field": "file"},
+        "output": {
+            "success": "boolean",
+            "detections": "array",
+            "model_info": "object"
+        }
     }
 
 @app.get("/health")
@@ -129,6 +146,9 @@ async def health_check():
             "confidence_threshold": CONFIDENCE_THRESHOLD,
             "nms_threshold": NMS_THRESHOLD
         },
+        "contract_version": CONTRACT_VERSION,
+        "model_version": MODEL_VERSION,
+        "dataset_version": DATASET_VERSION,
         "ready": net is not None
     }
 
@@ -285,6 +305,9 @@ async def detect_objects(file: UploadFile = File(...)):
                 "height": img.shape[0]
             },
             "model_info": {
+                "contract_version": CONTRACT_VERSION,
+                "model_version": MODEL_VERSION,
+                "dataset_version": DATASET_VERSION,
                 "classes": len(class_names),
                 "confidence_threshold": CONFIDENCE_THRESHOLD,
                 "nms_threshold": NMS_THRESHOLD

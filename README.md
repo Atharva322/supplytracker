@@ -6,6 +6,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 > **Project status:** See [IMPLEMENTED_VS_PLANNED.md](IMPLEMENTED_VS_PLANNED.md) for the verified capability inventory, roadmap boundary, and measurements that still require reproducible benchmarks.
 >
 > **Phase 1–4 branch:** See [docs/PHASES_1_4_IMPLEMENTATION.md](docs/PHASES_1_4_IMPLEMENTATION.md) for the security, organization, batch ledger, custody, shipment, cold-chain APIs, test gates, and known blockers. The v2 model is additive and does not delete legacy product data.
+>
+> **Phase 5 async inspection:** See [docs/PHASE_5_ASYNC_INSPECTION.md](docs/PHASE_5_ASYNC_INSPECTION.md) for the upload-slot, queue, worker, retry/DLQ, and versioned YOLO contract workflow.
 
 ## 📋 Table of Contents
 
@@ -26,7 +28,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 - **YOLOv3 Custom Model** - Real-time fruit quality detection; accuracy is being re-baselined with a reproducible evaluation set
 - **Automated Quality Inspection** - Classify fruits as GOOD/BAD across 6 product classes
 - **AI-Powered Descriptions** - Generate quality reports using AWS Bedrock
-- **Real-time Processing** - Synchronous inference endpoint with latency benchmarking planned
+- **Async Inspection Jobs** - Upload-slot based v2 workflow with queued inference, retries, DLQ state, and completion notifications
+- **Legacy Real-time Processing** - Synchronous inference endpoint retained for compatibility with latency benchmarking planned
 - **Batch Processing** - Multi-image inference endpoint; production throughput benchmarking is planned
 
 ### 🔐 Authentication & Authorization
@@ -318,6 +321,11 @@ Potatoes,VEGETABLE,BATCH-002,2024-01-20,FARM-456
 | POST | `/api/detection/detect` | YOLOv3 object detection | Yes |
 | POST | `/api/detection/quality-check` | Quality assessment | Yes |
 | POST | `/api/detection/analyze` | Full analysis with AI | No |
+| POST | `/api/v2/inspection-jobs/upload-slot` | Request an async inspection upload slot | Yes |
+| PUT | `/api/v2/inspection-uploads/**` | Upload inspection image bytes to local object storage | Yes |
+| POST | `/api/v2/inspection-jobs` | Queue an idempotent async inspection job | Yes |
+| GET | `/api/v2/inspection-jobs/{jobId}` | Read inspection job status/result | Yes |
+| GET | `/api/v2/inspection-jobs?organizationId=...` | List organization inspection jobs | Yes |
 
 **Request Format:**
 ```bash
@@ -378,6 +386,7 @@ file: [image file]
 | POST | `http://localhost:8000/detect` | YOLO object detection |
 | POST | `http://localhost:8000/quality-check` | Quality assessment |
 | GET | `http://localhost:8000/health` | Service health check |
+| GET | `http://localhost:8000/contract` | Versioned inference contract |
 
 ### Query Parameters
 

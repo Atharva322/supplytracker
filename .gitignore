@@ -42,5 +42,6 @@ aws-credentials.txt
 supplytracker1/target/
 supplytracker1/logs/
 **/__pycache__/
+data/
 
 supplytracker1/target_bak/
