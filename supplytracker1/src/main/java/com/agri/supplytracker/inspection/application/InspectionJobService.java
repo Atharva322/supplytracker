@@ -1,8 +1,7 @@
 package com.agri.supplytracker.inspection.application;
 
 import com.agri.supplytracker.inspection.domain.*;
-import com.agri.supplytracker.inspection.persistence.InspectionJobRepository;
-import com.agri.supplytracker.inspection.persistence.InspectionQueueMessageRepository;
+import com.agri.supplytracker.inspection.persistence.*;
 import com.agri.supplytracker.platform.domain.*;
 import com.agri.supplytracker.platform.persistence.*;
 import com.agri.supplytracker.platform.security.AuthorizationService;
@@ -19,33 +18,41 @@ import java.util.*;
 public class InspectionJobService {
     private final InspectionJobRepository jobs;
     private final InspectionQueueMessageRepository queue;
+    private final InspectionReviewActionRepository reviews;
+    private final InspectionRetrainingCandidateRepository retrainingCandidates;
     private final IdempotencyRecordRepository idempotency;
     private final OutboxEventRepository outbox;
     private final AuthorizationService authorization;
     private final ObjectStorageService storage;
     private final InspectionInferenceClient inference;
+    private final InspectionScoringService scoring;
     private final ClassifierService classifier;
     private final NotificationService notifications;
     private final String modelVersion;
     private final String datasetVersion;
-    private final double reviewThreshold;
+    private final String preprocessingVersion;
+    private final String labelMapVersion;
     private final int maxAttempts;
     private final long retryBackoffSeconds;
     private final MeterRegistry meterRegistry;
 
-    public InspectionJobService(InspectionJobRepository jobs, InspectionQueueMessageRepository queue, IdempotencyRecordRepository idempotency,
+    public InspectionJobService(InspectionJobRepository jobs, InspectionQueueMessageRepository queue,
+                                InspectionReviewActionRepository reviews, InspectionRetrainingCandidateRepository retrainingCandidates,
+                                IdempotencyRecordRepository idempotency,
                                 OutboxEventRepository outbox, AuthorizationService authorization,
-                                ObjectStorageService storage, InspectionInferenceClient inference,
+                                ObjectStorageService storage, InspectionInferenceClient inference, InspectionScoringService scoring,
                                 ClassifierService classifier, NotificationService notifications,
                                 @Value("${inspection.model.version:local-yolo-placeholder}") String modelVersion,
                                 @Value("${inspection.dataset.version:unversioned-local-dev}") String datasetVersion,
-                                @Value("${inspection.review.confidence-threshold:0.60}") double reviewThreshold,
+                                @Value("${inspection.preprocessing.version:preprocess-local-v1}") String preprocessingVersion,
+                                @Value("${inspection.label-map.version:coco-local-v1}") String labelMapVersion,
                                 @Value("${inspection.worker.max-attempts:3}") int maxAttempts,
                                 @Value("${inspection.worker.retry-backoff-seconds:30}") long retryBackoffSeconds,
                                 MeterRegistry meterRegistry) {
-        this.jobs = jobs; this.queue = queue; this.idempotency = idempotency; this.outbox = outbox; this.authorization = authorization;
-        this.storage = storage; this.inference = inference; this.classifier = classifier; this.notifications = notifications;
-        this.modelVersion = modelVersion; this.datasetVersion = datasetVersion; this.reviewThreshold = reviewThreshold;
+        this.jobs = jobs; this.queue = queue; this.reviews = reviews; this.retrainingCandidates = retrainingCandidates;
+        this.idempotency = idempotency; this.outbox = outbox; this.authorization = authorization;
+        this.storage = storage; this.inference = inference; this.scoring = scoring; this.classifier = classifier; this.notifications = notifications;
+        this.modelVersion = modelVersion; this.datasetVersion = datasetVersion; this.preprocessingVersion = preprocessingVersion; this.labelMapVersion = labelMapVersion;
         this.maxAttempts = maxAttempts; this.retryBackoffSeconds = retryBackoffSeconds;
         this.meterRegistry = meterRegistry;
     }
@@ -74,6 +81,7 @@ public class InspectionJobService {
         InspectionJob job = jobs.save(InspectionJob.builder().organizationId(organizationId).batchId(batchId)
             .requestedBy(actor).status(InspectionJobStatus.QUEUED).objectKey(objectKey).inputChecksum(inputChecksum)
             .contentType(contentType).modelVersion(modelVersion).datasetVersion(datasetVersion)
+            .preprocessingVersion(preprocessingVersion).labelMapVersion(labelMapVersion)
             .attempts(0).createdAt(now).updatedAt(now).queuedAt(now).nextAttemptAt(now).build());
         queue.save(InspectionQueueMessage.builder().jobId(job.getId()).status(InspectionQueueStatus.READY)
             .attempts(0).createdAt(now).updatedAt(now).nextAttemptAt(now).build());
@@ -122,7 +130,12 @@ public class InspectionJobService {
             List<String> labels = result.labels() == null || result.labels().isEmpty() ? List.of("Unknown Product") : result.labels();
             job.setLabels(labels); job.setRawResult(result.rawResult()); job.setConfidence(result.confidence());
             job.setInferenceLatencyMs(result.latencyMs()); job.setClassification(classifier.classifyProduct(labels));
-            job.setStatus(result.confidence() < reviewThreshold ? InspectionJobStatus.REVIEW_REQUIRED : InspectionJobStatus.SUCCEEDED);
+            InspectionScoringService.Score score = scoring.score(job.getClassification(), labels, result.confidence());
+            job.setQualityScore(score.qualityScore()); job.setQualityBand(score.qualityBand());
+            job.setReviewConfidenceThreshold(score.reviewThreshold()); job.setPolicySensitive(score.policySensitive());
+            job.setScoringProfileVersion(score.profileVersion()); job.setThresholdVersion(score.thresholdVersion());
+            job.setAutomatedDecision(score.decision()); job.setFinalDecision(score.decision());
+            job.setStatus(score.decision() == InspectionDecision.REVIEW ? InspectionJobStatus.REVIEW_REQUIRED : InspectionJobStatus.SUCCEEDED);
             job.setCompletedAt(Instant.now()); job.setUpdatedAt(job.getCompletedAt());
             InspectionJob saved = jobs.save(job);
             message.setStatus(InspectionQueueStatus.ACKED); message.setAttempts(job.getAttempts()); message.setUpdatedAt(saved.getCompletedAt());
@@ -166,6 +179,58 @@ public class InspectionJobService {
         }
     }
 
+    @Transactional
+    public InspectionJob review(String jobId, InspectionReviewActionType action, List<String> correctedLabels,
+                                String correctedClassification, String reason, String reviewer) {
+        InspectionJob job = jobs.findById(jobId).orElseThrow(() -> new NoSuchElementException("Inspection job not found"));
+        authorization.requireManager(job.getOrganizationId(), reviewer);
+        if (job.getStatus() == InspectionJobStatus.QUEUED || job.getStatus() == InspectionJobStatus.PROCESSING) {
+            throw new IllegalStateException("Inspection job is not ready for review");
+        }
+        if ((action == InspectionReviewActionType.CORRECT || action == InspectionReviewActionType.REJECT) && (reason == null || reason.isBlank())) {
+            throw new IllegalArgumentException("reason is required for correction or rejection");
+        }
+        List<String> previousLabels = copy(job.getLabels());
+        String previousClassification = job.getClassification();
+        InspectionDecision previousDecision = job.getFinalDecision() == null ? job.getAutomatedDecision() : job.getFinalDecision();
+        Instant now = Instant.now();
+        InspectionDecision finalDecision = action == InspectionReviewActionType.REJECT ? InspectionDecision.REJECT : InspectionDecision.APPROVE;
+        List<String> finalLabels = action == InspectionReviewActionType.CORRECT ? requireLabels(correctedLabels) : previousLabels;
+        String finalClassification = action == InspectionReviewActionType.CORRECT
+            ? classifyCorrection(finalLabels, correctedClassification) : previousClassification;
+        InspectionReviewAction review = reviews.save(InspectionReviewAction.builder()
+            .jobId(job.getId()).organizationId(job.getOrganizationId()).action(action)
+            .previousDecision(previousDecision).finalDecision(finalDecision)
+            .previousLabels(previousLabels).correctedLabels(finalLabels)
+            .previousClassification(previousClassification).correctedClassification(finalClassification)
+            .reason(reason).reviewer(reviewer).modelVersion(job.getModelVersion()).datasetVersion(job.getDatasetVersion())
+            .thresholdVersion(job.getThresholdVersion()).scoringProfileVersion(job.getScoringProfileVersion())
+            .createdAt(now).build());
+        job.setLabels(finalLabels); job.setClassification(finalClassification); job.setFinalDecision(finalDecision);
+        job.setOverrideReason(reason); job.setReviewedBy(reviewer); job.setReviewedAt(now); job.setReviewActionId(review.getId());
+        job.setStatus(InspectionJobStatus.REVIEWED); job.setUpdatedAt(now);
+        InspectionJob saved = jobs.save(job);
+        if (action == InspectionReviewActionType.CORRECT || action == InspectionReviewActionType.REJECT) {
+            retrainingCandidates.save(InspectionRetrainingCandidate.builder()
+                .jobId(job.getId()).organizationId(job.getOrganizationId()).objectKey(job.getObjectKey()).inputChecksum(job.getInputChecksum())
+                .modelVersion(job.getModelVersion()).datasetVersion(job.getDatasetVersion())
+                .originalLabels(previousLabels).correctedLabels(finalLabels)
+                .originalClassification(previousClassification).correctedClassification(finalClassification)
+                .reason(reason).reviewer(reviewer).status("QUEUED").createdAt(now).build());
+        }
+        outbox.save(OutboxEvent.builder().aggregateType("InspectionJob").aggregateId(saved.getId())
+            .eventType("INSPECTION_REVIEW_RECORDED")
+            .payload(Map.of("jobId", saved.getId(), "action", action.name(), "finalDecision", finalDecision.name()))
+            .createdAt(now).build());
+        meterRegistry.counter("inspection.reviews.recorded", "action", action.name()).increment();
+        return saved;
+    }
+
+    public List<InspectionReviewAction> reviews(String jobId, String actor) {
+        InspectionJob job = get(jobId, actor);
+        return reviews.findByJobIdOrderByCreatedAtAsc(job.getId());
+    }
+
     private InspectionJob replayJob(IdempotencyRecord record, String actor) {
         if (!"INSPECTION_JOB".equals(record.getResourceType())) throw new IllegalStateException("Idempotency key already used by another command");
         return get(record.getResourceId(), actor);
@@ -173,5 +238,21 @@ public class InspectionJobService {
 
     private void requireKey(String key) {
         if (key == null || key.isBlank()) throw new IllegalArgumentException("Idempotency-Key header is required");
+    }
+
+    private List<String> copy(List<String> labels) {
+        return labels == null ? List.of() : List.copyOf(labels);
+    }
+
+    private List<String> requireLabels(List<String> labels) {
+        if (labels == null || labels.isEmpty() || labels.stream().anyMatch(label -> label == null || label.isBlank())) {
+            throw new IllegalArgumentException("correctedLabels are required");
+        }
+        return List.copyOf(labels);
+    }
+
+    private String classifyCorrection(List<String> labels, String correctedClassification) {
+        if (correctedClassification != null && !correctedClassification.isBlank()) return correctedClassification;
+        return classifier.classifyProduct(labels);
     }
 }

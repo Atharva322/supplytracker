@@ -1,7 +1,7 @@
 package com.agri.supplytracker.inspection.api;
 
 import com.agri.supplytracker.inspection.application.*;
-import com.agri.supplytracker.inspection.domain.InspectionJob;
+import com.agri.supplytracker.inspection.domain.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.*;
@@ -20,6 +20,8 @@ public class InspectionJobController {
                                     @Min(1) long sizeBytes) {}
     public record CreateInspectionJobRequest(@NotBlank String organizationId, String batchId, @NotBlank String objectKey,
                                              @NotBlank String inputChecksum, @NotBlank String contentType) {}
+    public record ReviewInspectionJobRequest(@NotNull InspectionReviewActionType action, List<String> correctedLabels,
+                                             String correctedClassification, String reason) {}
 
     @PostMapping("/upload-slot")
     public ObjectStorageService.UploadSlot uploadSlot(@Valid @RequestBody UploadSlotRequest request, Authentication auth) {
@@ -35,6 +37,16 @@ public class InspectionJobController {
 
     @GetMapping("/{jobId}")
     public InspectionJob get(@PathVariable String jobId, Authentication auth) { return service.get(jobId, auth.getName()); }
+
+    @PostMapping("/{jobId}/reviews")
+    public InspectionJob review(@PathVariable String jobId, @Valid @RequestBody ReviewInspectionJobRequest request, Authentication auth) {
+        return service.review(jobId, request.action(), request.correctedLabels(), request.correctedClassification(), request.reason(), auth.getName());
+    }
+
+    @GetMapping("/{jobId}/reviews")
+    public List<InspectionReviewAction> reviews(@PathVariable String jobId, Authentication auth) {
+        return service.reviews(jobId, auth.getName());
+    }
 
     @GetMapping
     public List<InspectionJob> list(@RequestParam String organizationId, Authentication auth) {

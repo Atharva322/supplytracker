@@ -25,7 +25,13 @@ inspection.inference.connect-timeout-ms=${INSPECTION_INFERENCE_CONNECT_TIMEOUT_M
 inspection.inference.read-timeout-ms=${INSPECTION_INFERENCE_READ_TIMEOUT_MS:60000}
 inspection.model.version=${INSPECTION_MODEL_VERSION:local-yolo-placeholder}
 inspection.dataset.version=${INSPECTION_DATASET_VERSION:unversioned-local-dev}
+inspection.preprocessing.version=${INSPECTION_PREPROCESSING_VERSION:preprocess-local-v1}
+inspection.label-map.version=${INSPECTION_LABEL_MAP_VERSION:coco-local-v1}
+inspection.threshold.version=${INSPECTION_THRESHOLD_VERSION:thresholds-local-v1}
 inspection.review.confidence-threshold=${INSPECTION_REVIEW_CONFIDENCE_THRESHOLD:0.60}
+inspection.scoring.profile-version=${INSPECTION_SCORING_PROFILE_VERSION:calibrated-local-v1}
+inspection.scoring.product-thresholds=${INSPECTION_SCORING_PRODUCT_THRESHOLDS:Fruits:0.72,Vegetables:0.68}
+inspection.policy-sensitive-labels=${INSPECTION_POLICY_SENSITIVE_LABELS:}
 
 # MongoDB Configuration
 spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27018/agriproj?directConnection=true}

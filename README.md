@@ -8,6 +8,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 > **Phase 1–4 branch:** See [docs/PHASES_1_4_IMPLEMENTATION.md](docs/PHASES_1_4_IMPLEMENTATION.md) for the security, organization, batch ledger, custody, shipment, cold-chain APIs, test gates, and known blockers. The v2 model is additive and does not delete legacy product data.
 >
 > **Phase 5 async inspection:** See [docs/PHASE_5_ASYNC_INSPECTION.md](docs/PHASE_5_ASYNC_INSPECTION.md) for the upload-slot, queue, worker, retry/DLQ, and versioned YOLO contract workflow.
+>
+> **Phase 6 review lifecycle:** See [docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md](docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md) for reviewer actions, immutable audit, retraining candidates, calibrated scoring, and evaluation reports.
 
 ## 📋 Table of Contents
 
@@ -29,6 +31,7 @@ A full-stack agricultural supply chain management system with integrated AI obje
 - **Automated Quality Inspection** - Classify fruits as GOOD/BAD across 6 product classes
 - **AI-Powered Descriptions** - Generate quality reports using AWS Bedrock
 - **Async Inspection Jobs** - Upload-slot based v2 workflow with queued inference, retries, DLQ state, and completion notifications
+- **Human Review Lifecycle** - Low-confidence or policy-sensitive predictions route to reviewer accept/correct/reject actions with audit records and retraining candidates
 - **Legacy Real-time Processing** - Synchronous inference endpoint retained for compatibility with latency benchmarking planned
 - **Batch Processing** - Multi-image inference endpoint; production throughput benchmarking is planned
 
@@ -325,6 +328,8 @@ Potatoes,VEGETABLE,BATCH-002,2024-01-20,FARM-456
 | PUT | `/api/v2/inspection-uploads/**` | Upload inspection image bytes to local object storage | Yes |
 | POST | `/api/v2/inspection-jobs` | Queue an idempotent async inspection job | Yes |
 | GET | `/api/v2/inspection-jobs/{jobId}` | Read inspection job status/result | Yes |
+| POST | `/api/v2/inspection-jobs/{jobId}/reviews` | Record reviewer accept/correct/reject action | Yes |
+| GET | `/api/v2/inspection-jobs/{jobId}/reviews` | Read append-only review actions | Yes |
 | GET | `/api/v2/inspection-jobs?organizationId=...` | List organization inspection jobs | Yes |
 
 **Request Format:**

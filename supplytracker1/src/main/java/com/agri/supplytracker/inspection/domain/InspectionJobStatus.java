@@ -6,5 +6,6 @@ public enum InspectionJobStatus {
     PROCESSING,
     SUCCEEDED,
     REVIEW_REQUIRED,
+    REVIEWED,
     FAILED
 }

@@ -9,6 +9,7 @@ This file prevents roadmap items and unverified measurements from being presente
 - JWT/password authentication, Google OAuth integration, and method-level role checks on selected mutations.
 - REST product/farm/auth/detection APIs and a GraphQL schema/controller layer.
 - Asynchronous `/api/v2/inspection-jobs` pipeline with upload slots, local object-storage adapter, durable queue messages, retries/backoff, DLQ state, outbox events, versioned inference client, and worker metrics.
+- Human review workflow for inspection jobs with calibrated scoring, persisted model/dataset/preprocessing/label-map/threshold/profile versions, manager-only accept/correct/reject actions, append-only review audit records, retraining-candidate queue documents, and an offline evaluation report command.
 - Product tracking history embedded in product documents.
 - SSE product-update stream and STOMP-based notification components.
 - FastAPI/OpenCV YOLOv3 inference service with detect, batch-detect, quality-check, health, and versioned contract endpoints.
@@ -28,7 +29,6 @@ This file prevents roadmap items and unverified measurements from being presente
 - ProductBatch v2 and immutable traceability event ledger.
 - Idempotent commands and transactional outbox messaging.
 - Custody transfers, shipments, cold-chain sensor processing, and incident alerts.
-- Human review and model lifecycle workflows for uncertain AI results.
 - Batch split/merge genealogy and targeted recall traversal.
 - QR public traceability and bounded offline/PWA workflows.
 - OpenTelemetry traces, SLOs, load/failure testing, and reproducible performance reports.
