@@ -10,6 +10,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 > **Phase 5 async inspection:** See [docs/PHASE_5_ASYNC_INSPECTION.md](docs/PHASE_5_ASYNC_INSPECTION.md) for the upload-slot, queue, worker, retry/DLQ, and versioned YOLO contract workflow.
 >
 > **Phase 6 review lifecycle:** See [docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md](docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md) for reviewer actions, immutable audit, retraining candidates, calibrated scoring, and evaluation reports.
+>
+> **Phase 7 lineage/recall:** See [docs/PHASE_7_LINEAGE_RECALL.md](docs/PHASE_7_LINEAGE_RECALL.md) for batch split/merge/derive/consume genealogy, bounded traversal, recall cases, simulation, notices, acknowledgments, and resolution.
 
 ## 📋 Table of Contents
 
@@ -34,6 +36,7 @@ A full-stack agricultural supply chain management system with integrated AI obje
 - **Human Review Lifecycle** - Low-confidence or policy-sensitive predictions route to reviewer accept/correct/reject actions with audit records and retraining candidates
 - **Legacy Real-time Processing** - Synchronous inference endpoint retained for compatibility with latency benchmarking planned
 - **Batch Processing** - Multi-image inference endpoint; production throughput benchmarking is planned
+- **Targeted Recall** - Batch genealogy traversal identifies affected batches, shipments, holders, recipients, and facilities
 
 ### 🔐 Authentication & Authorization
 - **JWT-based Authentication** - Secure login/register system
@@ -331,6 +334,12 @@ Potatoes,VEGETABLE,BATCH-002,2024-01-20,FARM-456
 | POST | `/api/v2/inspection-jobs/{jobId}/reviews` | Record reviewer accept/correct/reject action | Yes |
 | GET | `/api/v2/inspection-jobs/{jobId}/reviews` | Read append-only review actions | Yes |
 | GET | `/api/v2/inspection-jobs?organizationId=...` | List organization inspection jobs | Yes |
+| POST | `/api/v2/lineage/batches/{batchId}/split` | Record conserved split lineage edges | Yes |
+| POST | `/api/v2/lineage/merge` | Record conserved merge lineage edges | Yes |
+| GET | `/api/v2/lineage/batches/{batchId}/traverse` | Traverse downstream affected genealogy | Yes |
+| POST | `/api/v2/recalls` | Create recall case or simulation from source batch | Yes |
+| POST | `/api/v2/recalls/{recallId}/acknowledgments` | Acknowledge recall scope | Yes |
+| POST | `/api/v2/recalls/{recallId}/resolution` | Resolve recall case | Yes |
 
 **Request Format:**
 ```bash

@@ -4,6 +4,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.*;
 public interface ProductBatchRepository extends MongoRepository<ProductBatch, String> {
     Optional<ProductBatch> findByBatchId(String batchId);
+    List<ProductBatch> findByBatchIdIn(Collection<String> batchIds);
     List<ProductBatch> findByOrganizationId(String organizationId);
     List<ProductBatch> findByOrganizationIdOrCustodianOrganizationIdOrPendingCustodianOrganizationId(String organizationId, String custodianOrganizationId, String pendingCustodianOrganizationId);
     Optional<ProductBatch> findByMigrationSourceId(String migrationSourceId);

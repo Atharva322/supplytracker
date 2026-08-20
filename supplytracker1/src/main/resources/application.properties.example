@@ -33,6 +33,10 @@ inspection.scoring.profile-version=${INSPECTION_SCORING_PROFILE_VERSION:calibrat
 inspection.scoring.product-thresholds=${INSPECTION_SCORING_PRODUCT_THRESHOLDS:Fruits:0.72,Vegetables:0.68}
 inspection.policy-sensitive-labels=${INSPECTION_POLICY_SENSITIVE_LABELS:}
 
+# Lineage and recall traversal
+lineage.traversal.max-depth=${LINEAGE_TRAVERSAL_MAX_DEPTH:12}
+lineage.traversal.max-nodes=${LINEAGE_TRAVERSAL_MAX_NODES:1000}
+
 # MongoDB Configuration
 spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27018/agriproj?directConnection=true}
 spring.data.mongodb.auto-index-creation=true
