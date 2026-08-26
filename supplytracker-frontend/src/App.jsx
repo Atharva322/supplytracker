@@ -3,6 +3,7 @@ import { getProducts, createProduct, updateProduct, deleteProduct, login, regist
 import Homepage from "./Homepage";
 import ObjectDetection from "./components/ObjectDetection";
 import GraphQLPlayground from "./components/GraphQLPlayground";
+import OperatorConsole from "./features/operations/OperatorConsole";
 import useNotifications from './hooks/useNotifications';
 import NotificationBell from './components/NotificationBell';
 
@@ -764,6 +765,16 @@ function App() {
                 }`}
               >
                 🔍 Detection
+              </button>
+              <button
+                onClick={() => setActiveTab("operations")}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                  activeTab === "operations"
+                    ? "bg-emerald-500 text-emerald-950 shadow-lg shadow-emerald-500/20"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                }`}
+              >
+                Operations
               </button>
               <button
                 onClick={() => setActiveTab("graphql")}
@@ -1715,6 +1726,8 @@ function App() {
                 </div>
               </div>
             )}
+
+            {activeTab === "operations" && <OperatorConsole />}
 
         {/* Footer note */}
         <p className="mt-6 text-xs text-slate-500">

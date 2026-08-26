@@ -11,6 +11,7 @@ This file prevents roadmap items and unverified measurements from being presente
 - Asynchronous `/api/v2/inspection-jobs` pipeline with upload slots, local object-storage adapter, durable queue messages, retries/backoff, DLQ state, outbox events, versioned inference client, and worker metrics.
 - Human review workflow for inspection jobs with calibrated scoring, persisted model/dataset/preprocessing/label-map/threshold/profile versions, manager-only accept/correct/reject actions, append-only review audit records, retraining-candidate queue documents, and an offline evaluation report command.
 - Batch genealogy and targeted recall workflow with immutable split/merge/derive/consume lineage edges, quantity conservation checks, cycle-protected bounded traversal, recall scope snapshots, simulation mode, notices, acknowledgments, and resolution.
+- TypeScript frontend foundation with strict typecheck script, typed API contracts, centralized auth/error/query-key helpers, migrated API/query modules, TSX entry point, and an operator console for batches, inspections, lineage, and recall simulation.
 - Product tracking history embedded in product documents.
 - SSE product-update stream and STOMP-based notification components.
 - FastAPI/OpenCV YOLOv3 inference service with detect, batch-detect, quality-check, health, and versioned contract endpoints.

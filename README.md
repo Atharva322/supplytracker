@@ -12,6 +12,8 @@ A full-stack agricultural supply chain management system with integrated AI obje
 > **Phase 6 review lifecycle:** See [docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md](docs/PHASE_6_HUMAN_REVIEW_MODEL_LIFECYCLE.md) for reviewer actions, immutable audit, retraining candidates, calibrated scoring, and evaluation reports.
 >
 > **Phase 7 lineage/recall:** See [docs/PHASE_7_LINEAGE_RECALL.md](docs/PHASE_7_LINEAGE_RECALL.md) for batch split/merge/derive/consume genealogy, bounded traversal, recall cases, simulation, notices, acknowledgments, and resolution.
+>
+> **Phase 8 TypeScript frontend:** See [docs/PHASE_8_TYPESCRIPT_FRONTEND.md](docs/PHASE_8_TYPESCRIPT_FRONTEND.md) for the TypeScript foundation, typed API contracts, shared auth/error/query utilities, and operator console.
 
 ## 📋 Table of Contents
 
@@ -37,6 +39,7 @@ A full-stack agricultural supply chain management system with integrated AI obje
 - **Legacy Real-time Processing** - Synchronous inference endpoint retained for compatibility with latency benchmarking planned
 - **Batch Processing** - Multi-image inference endpoint; production throughput benchmarking is planned
 - **Targeted Recall** - Batch genealogy traversal identifies affected batches, shipments, holders, recipients, and facilities
+- **Typed Operator Console** - TypeScript-powered operations view for batches, inspections, lineage, and recall simulation
 
 ### 🔐 Authentication & Authorization
 - **JWT-based Authentication** - Secure login/register system

@@ -1,12 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../api';
+import { queryKeys } from '../lib/queryKeys';
+import type { ProductWriteRequest } from '../types/api';
 
 // React Query hook for products
-export function useProducts(page = 0, size = 10, sortBy = 'name', sortDir = 'asc') {
+export function useProducts(page = 0, size = 10, sortBy = 'name', sortDir: 'asc' | 'desc' = 'asc') {
   return useQuery({
-    queryKey: ['products', page, size, sortBy, sortDir],
+    queryKey: queryKeys.products(page, size, sortBy, sortDir),
     queryFn: () => getProducts(page, size, sortBy, sortDir),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -17,7 +19,7 @@ export function useCreateProduct() {
   return useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries(['products']);
+      queryClient.invalidateQueries({ queryKey: queryKeys.productRoot });
     },
   });
 }
@@ -27,9 +29,9 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, product }) => updateProduct(id, product),
+    mutationFn: ({ id, product }: { id: string; product: ProductWriteRequest }) => updateProduct(id, product),
     onSuccess: () => {
-      queryClient.invalidateQueries(['products']);
+      queryClient.invalidateQueries({ queryKey: queryKeys.productRoot });
     },
   });
 }
@@ -41,7 +43,7 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries(['products']);
+      queryClient.invalidateQueries({ queryKey: queryKeys.productRoot });
     },
   });
 }
